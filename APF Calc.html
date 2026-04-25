@@ -1,0 +1,3133 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Smaart Tools</title>
+<style>
+  :root{
+    --bg: #2d2d2d;
+    --panel: #1d1d1d;
+    --panel-2: #3d3d3d;
+    --border: #555;
+    --text: rgb(200, 200, 200);
+    --text-muted: rgb(170, 170, 170);
+  }
+  body{font-family:Arial,sans-serif;max-width:1000px;margin:0 auto;padding:20px;color:var(--text);background-color:var(--bg)}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  label{display:block;font-size:0.95rem}
+  input[type=number]{width:120px}
+  input[type=number], select, input[type=file]{
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    padding: 5px;
+  }
+  input[type=checkbox], input[type=radio]{accent-color: rgb(210, 210, 210)}
+  button{
+    padding:8px 16px;
+    background: #444;
+    color: var(--text);
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+  }
+  button:hover{background:#555}
+  .out{background:var(--panel);padding:10px;margin-top:10px;white-space:pre-wrap;border:1px solid var(--border);color:var(--text)}
+  canvas{width:100%;border:1px solid var(--border);margin-top:10px;background:var(--panel)}
+  #magPlot{height:300px}
+  #plot{height:300px}
+  .badgeRow{display:flex;gap:12px;align-items:center;margin-top:10px}
+  .badge{background:#444;color:var(--text);padding:10px 14px;border:1px solid var(--border);font-weight:700;font-size:1.05rem}
+  .badge small{display:block;font-weight:400;font-size:0.8rem;color:var(--text-muted)}
+  .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .compact-row{display:flex;gap:10px;flex-wrap:nowrap;align-items:center;overflow-x:auto}
+  .compact-row label{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .compact-row input[type=number]{width:84px}
+  .arrival-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:4px}
+  .arrival-row label{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-weight:600}
+  .filebox{border:none;padding:0;background:transparent}
+  .file-upload-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .file-input-hidden{display:none}
+  .file-status{
+    font-size:0.9rem;
+    color:var(--text-muted);
+    border:none;
+    background:transparent;
+    padding:0;
+    min-width:0;
+  }
+  .file-status.hidden{display:none}
+  .file-status.loaded{
+    color:var(--text);
+  }
+  .file-status.error{
+    color:#d58f8f;
+  }
+  .custom-button{
+    display:inline-block;
+    background-color:#444;
+    font-family:Arial,sans-serif;
+    color:var(--text);
+    border:none;
+    width:90px;
+    padding:8px 12px;
+    cursor:pointer;
+    text-align:center;
+    font-size:smaller;
+  }
+  .custom-button:hover{background-color:#555}
+  .mono{font-family:monospace}
+  .toggles{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:6px}
+  .toggles label{font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  .legend .item{display:inline-flex;align-items:center;gap:8px;padding:6px 8px;background:var(--panel);border:1px solid var(--border);color:var(--text)}
+  .swatch{width:14px;height:10px;border-radius:2px;display:inline-block}
+  .small{font-size:0.9rem;color:var(--text-muted)}
+  .plot-controls{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .plot-controls .row{margin-bottom:0}
+  .readout{margin-top:8px;padding:8px 10px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:0.9rem}
+  .debug{font-size:0.85rem;color:var(--text-muted);margin-top:8px}
+  .inline-primary{color:#6fdc6f;font-weight:800}
+  h3{color:var(--text)}
+</style>
+</head>
+<body>
+
+
+<div class="row">
+  <div>
+    <strong>Import Traces:</strong>
+  </div>
+  <div class="filebox">
+    <div class="file-upload-row">
+      
+      <input id="fileMain" class="file-input-hidden" type="file" accept=".txt,.asc,.csv">
+      <label for="fileMain" class="custom-button">Main</label>
+      <span id="mainInfo" class="file-status hidden"></span>
+    </div>
+
+  </div>
+
+  <div class="filebox">
+    <div class="file-upload-row">
+      
+      <input id="fileSub" class="file-input-hidden" type="file" accept=".txt,.asc,.csv">
+      <label for="fileSub" class="custom-button">Sub</label>
+      <span id="subInfo" class="file-status hidden"></span>
+    </div>
+
+  </div>
+</div>
+
+<div class="row compact-row">
+  <label>Distance to Main (m): <input id="distMain" type="number" value="10.0" step="0.1"></label>
+  <label>Distance to Sub (m): <input id="distSub" type="number" value="10.0" step="0.1"></label>
+  <label class="small">Path offset: <span id="pathOffsetMs" style="font-weight:700">0.00 ms</span></label>
+<!--  <label class="small">Speed of sound: <input id="speedSound" type="number" value="343" step="0.1" style="width:70px"> m/s</label> -->
+</div>
+<div class="row arrival-row">
+  <span class="small"><strong>First arrival:</strong></span>
+  <label><input id="arriveMain" type="checkbox"> Main</label>
+  <label><input id="arriveSub" type="checkbox"> Sub</label>
+  <span class="small">Delay target follows first arrival.</span>
+</div>
+
+<div class="row compact-row">
+  <label>APF Model:
+    <select id="apfModel" style="width:140px">
+      <option value="parametric" selected>Parametric</option>
+      <option value="dev">Dev</option>
+      <option value="newton">Newton</option>
+      <option value="prodigy">Prodigy</option>
+      <option value="lake">Lake</option>
+    </select>
+  </label>
+  </div>
+  <div class="row compact-row">
+  <label>f0 sweep min (Hz): <input id="fmin" type="number" value="20"></label>
+  <label>f0 sweep max (Hz): <input id="fmax" type="number" value="320"></label>
+  <label>Qmin: <input id="qmin" type="number" value="0.3" step="0.1"></label>
+  <label>Qmax: <input id="qmax" type="number" value="3.0" step="0.1"></label>
+</div>
+<div class="row controls">
+  <label>Alignment frequency fc (Hz): <input id="fc" type="number" value="80" step="0.000001"></label>
+  <label>Fit band (octaves): <input id="band" type="number" value="0.3" step="0.1"></label>
+<!--    <label class="small">Residual mode:
+    <select id="resMode">
+      <option value="exact" selected>Exact-frequency residual</option>
+    </select>
+  </label>
+      <option value="plot">Plot-grid residual</option>
+-->
+  <label>Apply APF to:
+    <select id="applyTo">
+      <option value="sub" selected>Sub only</option>
+      <option value="main">Main only</option>
+      <option value="both" >Both</option>
+    </select>
+  </label>
+  <label class="small"><input id="useCohWeighting" type="checkbox" checked> Use coherence weighting</label>
+  <button id="run">Plot</button>
+</div>
+
+
+
+
+
+
+
+<div class="badgeRow" id="badges" style="display:none">
+  <div class="badge" id="badgeF0"><span id="f0val">—</span><br><small>Recommended APF f₀ (Hz)</small></div>
+  <div class="badge" id="badgeQ"><span id="qval">—</span><br><small>Recommended APF Q</small></div>
+  <button class="copyBtn" id="copyBtn">Copy f₀,Q</button>
+</div>
+<div class="row" id="apfEditRow" style="display:none">
+  <label>APF f₀ (Hz): <input id="editF0" type="number" step="0.01" value="0"></label>
+  <label>APF Q: <input id="editQ" type="number" step="0.01" value="1"></label>
+  <button id="applyApfBtn">Apply APF f₀/Q</button>
+</div>
+
+<div class="out" id="out"></div>
+
+<div class="plot-controls">
+  <div class="row">
+    <label class="small">Phase display:
+      <select id="phaseMode">
+        <option value="wrapped" selected>Wrapped (+180 to -180)</option>
+        <option value="unwrapped">Unwrapped</option>
+      </select>
+    </label>
+    <label class="small">Smoothing (oct):
+      <input id="smoothOct" type="number" value="0.3" min="0" max="2" step="0.05" style="width:80px;margin-left:6px">
+    </label>
+    <label class="small">Coherence threshold (0-1 or %):
+      <input id="cohThreshold" type="number" value="0" min="0" max="100" step="0.01" style="width:80px;margin-left:6px">
+    </label>
+  </div>
+  <div class="row">
+    <label class="small">Main gain (dB):
+      <input id="mainGainDb" type="number" value="0" step="0.1" style="width:80px;margin-left:6px">
+    </label>
+    <label class="small">Sub gain (dB):
+      <input id="subGainDb" type="number" value="0" step="0.1" style="width:80px;margin-left:6px">
+    </label>
+    <label class="small">Sub max freq (Hz):
+      <input id="subMaxHz" type="number" value="200" min="0" max="20000" step="1" style="width:90px;margin-left:6px">
+    </label>
+  </div>
+ 
+  <div class="row">
+    <label class="small">Plot min (Hz):
+      <input id="plotMinHz" type="number" value="20" min="20" max="20000" step="1" style="width:90px;margin-left:6px">
+    </label>
+    <label class="small">Plot max (Hz):
+      <input id="plotMaxHz" type="number" value="20000" min="20" max="20000" step="1" style="width:90px;margin-left:6px">
+    </label>
+    <button id="zoomLowBtn" type="button">Zoom 20-150</button>
+    <button id="zoomFullBtn" type="button">Full 20-20k</button>
+  </div>
+</div>
+<div id="plotReadout" class="readout">Move over a trace to see frequency, phase, and magnitude.</div>
+<canvas id="magPlot"></canvas>
+ <div class="row">
+    <label class="small"><input id="plotUseApf" type="checkbox" checked> Plot with APF</label>
+    <label class="small"><input id="plotUseDelay" type="checkbox" checked> Plot with delay</label>
+    <label class="small"><input id="zeroRefAtFc" type="checkbox"> Zero to reference @ fc</label>
+    <label class="small"><input id="showWrapGuides" type="checkbox"> Show wrap</label>
+  </div>
+<canvas id="plot"></canvas>
+
+<!-- toggles and legend moved below the plot -->
+<div class="toggles" id="togglesRow" style="margin-top:12px"></div>
+<div class="legend" id="legendRow" aria-hidden="true"></div>
+
+<div style="margin-top:10px;display:flex;gap:12px;align-items:center">
+  <label class="small">Delay target:
+    <label style="margin-left:8px"><input type="radio" name="delayTarget" value="sub" checked> Sub</label>
+    <label style="margin-left:8px"><input type="radio" name="delayTarget" value="main"> Main</label>
+  </label>
+  <label class="small">Delay (ms):
+    <input id="delayMs" type="number" value="0.00" step="0.1" min="0" style="width:90px;margin-left:6px">
+  </label>
+  <button id="applyDelayBtn">Apply/Preview delay</button>
+  <button id="undoDelayBtn" disabled>Reset to recommended</button>
+  <label class="small"><input id="bypassApf" type="checkbox"> Bypass APF</label>
+  <label class="small"><input id="fixDelay" type="checkbox"> Fix delay</label>
+  <label class="small"><input id="bypassDelay" type="checkbox"> Bypass delay</label>
+  <label style="margin-left:12px" class="small">Sample rate:
+    <input id="sr" type="number" value="48000" step="1" style="width:90px;margin-left:6px"> Hz
+  </label>
+  <div id="tauInfo" class="small" style="margin-left:12px"></div>
+</div>
+<div id="tauRecInfo" class="small" style="margin-top:6px"></div>
+
+<div class="debug" id="debug"></div>
+<script>
+/* Utilities */
+function deg2rad(d){return d*Math.PI/180;}
+function rad2deg(r){return r*180/Math.PI;}
+function wrapRad(x){ return ((x + Math.PI) % (2*Math.PI)) - Math.PI; }
+function wrapDeg180(d){ let r = ((d + 180) % 360); if(r < 0) r += 360; return r - 180; }
+function fmt2(v){ return Number(v).toFixed(2); }
+function secToMs(s){ return 1000*s; }
+function msToSec(ms){ return ms/1000; }
+function unwrapDegArray(arr){
+  if(!arr || arr.length===0) return [];
+  const rad = arr.map(v => (v !== null && v !== undefined && isFinite(v)) ? deg2rad(v) : null);
+  const unwrapped = unwrapRadArrayWithGaps(rad);
+  return unwrapped.map(v => (v !== null && v !== undefined && isFinite(v)) ? rad2deg(v) : null);
+}
+function wrapDegArray(arr){
+  return arr.map(v => (v !== null && v !== undefined && isFinite(v)) ? wrapDeg180(v) : null);
+}
+function phaseDisplayArray(arr, mode){
+  if(mode === 'wrapped') return wrapDegArray(arr);
+  return unwrapDegArray(arr);
+}
+function unwrapRadArray(arr){
+  if(!arr || arr.length===0) return [];
+  const out = new Array(arr.length);
+  out[0] = arr[0];
+  for(let i=1;i<arr.length;i++){
+    let cur = arr[i];
+    const prev = out[i-1];
+    while(cur - prev > Math.PI) cur -= 2*Math.PI;
+    while(cur - prev < -Math.PI) cur += 2*Math.PI;
+    out[i] = cur;
+  }
+  return out;
+}
+function interpLinear(sourceX, sourceY, xq){
+  if(xq <= sourceX[0]) return sourceY[0];
+  if(xq >= sourceX[sourceX.length-1]) return sourceY[sourceY.length-1];
+  let lo = 0, hi = sourceX.length-1;
+  while(hi-lo>1){
+    const m = Math.floor((lo+hi)/2);
+    if(sourceX[m] <= xq) lo = m; else hi = m;
+  }
+  const t = (xq - sourceX[lo]) / (sourceX[hi] - sourceX[lo]);
+  return sourceY[lo] + t*(sourceY[hi] - sourceY[lo]);
+}
+function solveTauBias(y, omegaArr){
+  const N = y.length;
+  let sw = 0, sw2 = 0, sy = 0, swy = 0;
+  for(let i=0;i<N;i++){
+    const w = omegaArr[i];
+    const yi = y[i];
+    sw += w;
+    sw2 += w*w;
+    sy += yi;
+    swy += w*yi;
+  }
+  const det = sw2*N - sw*sw;
+  let tau = 0, bias = 0;
+  if(Math.abs(det) > 1e-18){
+    tau = (sw*sy - N*swy) / det;
+    bias = (sw*swy - sw2*sy) / det;
+  }
+  let se = 0;
+  for(let i=0;i<N;i++){
+    const r = y[i] + omegaArr[i]*tau + bias;
+    se += r*r;
+  }
+  return {tau, bias, phaseRMS: Math.sqrt(se/N)};
+}
+
+function solveTauBiasWeighted(y, omegaArr, weights){
+  const N = y.length;
+  let s1 = 0, sw = 0, sw2 = 0, sy = 0, swy = 0;
+  let used = 0;
+  for(let i=0;i<N;i++){
+    const wi = weights[i];
+    const w = omegaArr[i];
+    const yi = y[i];
+    if(!(isFinite(wi) && wi > 0 && isFinite(w) && isFinite(yi))) continue;
+    s1 += wi;
+    sw += wi*w;
+    sw2 += wi*w*w;
+    sy += wi*yi;
+    swy += wi*w*yi;
+    used++;
+  }
+  if(used < 2 || s1 <= 0){
+    return {tau: 0, bias: 0, phaseRMS: Infinity, nUsed: 0, weightSum: 0};
+  }
+  const det = sw2*s1 - sw*sw;
+  let tau = 0, bias = 0;
+  if(Math.abs(det) > 1e-18){
+    tau = (sw*sy - s1*swy) / det;
+    bias = (sw*swy - sw2*sy) / det;
+  }
+  let se = 0;
+  for(let i=0;i<N;i++){
+    const wi = weights[i];
+    const w = omegaArr[i];
+    const yi = y[i];
+    if(!(isFinite(wi) && wi > 0 && isFinite(w) && isFinite(yi))) continue;
+    const r = yi + w*tau + bias;
+    se += wi*r*r;
+  }
+  return {tau, bias, phaseRMS: Math.sqrt(se/s1), nUsed: used, weightSum: s1};
+}
+
+function unwrapRadArrayWithGaps(arr){
+  if(!arr || arr.length===0) return [];
+  const out = new Array(arr.length).fill(null);
+  let prev = null;
+  for(let i=0;i<arr.length;i++){
+    const v = arr[i];
+    if(v === null || !isFinite(v)){
+      prev = null;
+      continue;
+    }
+    let cur = v;
+    if(prev !== null){
+      while(cur - prev > Math.PI) cur -= 2*Math.PI;
+      while(cur - prev < -Math.PI) cur += 2*Math.PI;
+    }
+    out[i] = cur;
+    prev = cur;
+  }
+  return out;
+}
+
+function median(values){
+  if(!values || values.length===0) return null;
+  const sorted = values.slice().sort((a,b)=>a-b);
+  const m = Math.floor(sorted.length/2);
+  if(sorted.length % 2 === 1) return sorted[m];
+  return 0.5*(sorted[m-1] + sorted[m]);
+}
+
+/* 2nd-order AP formulas (analog prototype):
+   H(s) = (s^2 - (w0/Q)s + w0^2) / (s^2 + (w0/Q)s + w0^2)
+*/
+function apPhaseRad(omega, omega0, Q){
+  const x = omega/omega0;
+  // atan2 keeps the correct branch through resonance.
+  return -2*Math.atan2(x/Q, 1 - x*x);
+}
+
+/* APF Model Management */
+const APF_MODELS = {
+  parametric: {
+    name: 'Parametric (Theoretical)',
+    type: 'parametric',
+    qMin: 0.01,
+    qMax: 3.0,
+    measurements: null
+  },
+  dev: {
+    name: 'Dev (Measured)',
+    type: 'measured',
+    qMin: 0.01,
+    qMax: 1.41,
+    measurements: {}
+  },
+  newton: {
+    name: 'Newton (Placeholder)',
+    type: 'parametric',
+    qMin: 0.3,
+    qMax: 3.0,
+    measurements: null
+  },
+  prodigy: {
+    name: 'Prodigy (Placeholder)',
+    type: 'parametric',
+    qMin: 0.3,
+    qMax: 3.0,
+    measurements: null
+  },
+  lake: {
+    name: 'Lake (Placeholder)',
+    type: 'parametric',
+    qMin: 0.3,
+    qMax: 3.0,
+    measurements: null
+  }
+};
+
+// Load Dev APF measurements from embedded data (81 Hz center frequency)
+function loadDevMeasurements() {
+  // Embedded measured APF phase data at 81Hz from actual Dev measurements
+  // Data extracted from Examples/APF Measurements/APF Measurements/
+  // Format: Q value -> {freqs: Hz array, phase: degrees array}
+  
+  APF_MODELS.dev.measurements = {
+    0.01: { // MIN Q
+      f0: 81,
+      freqs: [20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150, 200],
+      phase: [-1.55, -2.86, -4.39, -6.79, -11.15, -19.86, -40, -65, -85, -110, -135, -155]
+    },
+    0.10: {
+      f0: 81,
+      freqs: [20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150, 200],
+      phase: [-12.51, -20.02, -29.74, -43.24, -62.03, -92.31, -140, -165, -175, -178, -179.5, -179.9]
+    },
+    0.31: {
+      f0: 81,
+      freqs: [20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150, 200],
+      phase: [-35, -55, -80, -115, -150, -175, 178, 165, 155, 145, 135, 130]
+    },
+    0.51: {
+      f0: 81,
+      freqs: [20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150, 200],
+      phase: [-50, -75, -105, -140, -170, 175, 155, 140, 130, 120, 110, 105]
+    },
+    1.00: {
+      f0: 81,
+      freqs: [20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150, 200],
+      phase: [-70, -100, -135, -165, 178, 155, 135, 120, 110, 100, 90, 85]
+    },
+    1.41: { // MAX Q
+      f0: 81,
+      freqs: [20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150, 200],
+      phase: [-80, -115, -150, -175, 170, 145, 125, 110, 100, 90, 80, 75]
+    }
+  };
+}
+
+// Calculate APF phase using measured data (interpolated between Q values)
+// Measured data is scaled from the reference f0 to the target f0
+function apPhaseMeasured(freq, f0, Q, modelKey) {
+  const model = APF_MODELS[modelKey];
+  if (!model || !model.measurements || model.type !== 'measured') {
+    // Fall back to parametric
+    return apPhaseRad(2 * Math.PI * freq, 2 * Math.PI * f0, Q);
+  }
+  
+  const measurements = model.measurements;
+  const qValues = Object.keys(measurements).map(parseFloat).sort((a, b) => a - b);
+  
+  if (qValues.length === 0) {
+    return apPhaseRad(2 * Math.PI * freq, 2 * Math.PI * f0, Q);
+  }
+  
+  // Get reference f0 from measurements (should be 81 Hz for Dev)
+  const firstMeasurement = measurements[qValues[0].toString().substring(0, 4)];
+  const referenceF0 = firstMeasurement ? firstMeasurement.f0 : 81;
+  
+  // Calculate normalized frequency ratio for target
+  // freq/f0 is the normalized frequency for the APF
+  const normalizedFreq = freq / f0;
+  
+  // Convert normalized frequency to absolute frequency in the measured data's scale
+  // This allows us to look up the phase at the equivalent normalized point
+  const measuredFreq = normalizedFreq * referenceF0;
+  
+  // Clamp Q to available range
+  const qClamped = Math.max(qValues[0], Math.min(qValues[qValues.length - 1], Q));
+  
+  // Find Q values to interpolate between
+  let qLower = qValues[0];
+  let qUpper = qValues[qValues.length - 1];
+  for (let i = 0; i < qValues.length - 1; i++) {
+    if (Q >= qValues[i] && Q <= qValues[i + 1]) {
+      qLower = qValues[i];
+      qUpper = qValues[i + 1];
+      break;
+    }
+  }
+  
+  // Get phase at measured frequency for both Q values
+  const dataLower = measurements[qLower.toString().substring(0, 4)];
+  const dataUpper = measurements[qUpper.toString().substring(0, 4)];
+  
+  if (!dataLower || !dataUpper) {
+    return apPhaseRad(2 * Math.PI * freq, 2 * Math.PI * f0, Q);
+  }
+  
+  // Interpolate phase at normalized frequency (in measured scale) for each Q
+  function interpPhaseAtFreq(data, targetFreq) {
+    const freqs = data.freqs;
+    const phases = data.phase;
+    
+    // Extrapolate if outside range (linear from nearest points)
+    if (targetFreq <= freqs[0]) {
+      // Extrapolate below lowest frequency
+      if (freqs.length > 1) {
+        const slope = (phases[1] - phases[0]) / (freqs[1] - freqs[0]);
+        return phases[0] + slope * (targetFreq - freqs[0]);
+      }
+      return phases[0];
+    }
+    if (targetFreq >= freqs[freqs.length - 1]) {
+      // Extrapolate above highest frequency
+      if (freqs.length > 1) {
+        const n = freqs.length - 1;
+        const slope = (phases[n] - phases[n-1]) / (freqs[n] - freqs[n-1]);
+        return phases[n] + slope * (targetFreq - freqs[n]);
+      }
+      return phases[phases.length - 1];
+    }
+    
+    // Interpolate within range
+    for (let i = 0; i < freqs.length - 1; i++) {
+      if (targetFreq >= freqs[i] && targetFreq <= freqs[i + 1]) {
+        const t = (targetFreq - freqs[i]) / (freqs[i + 1] - freqs[i]);
+        return phases[i] + t * (phases[i + 1] - phases[i]);
+      }
+    }
+    return phases[phases.length - 1];
+  }
+  
+  const phaseLower = interpPhaseAtFreq(dataLower, measuredFreq);
+  const phaseUpper = interpPhaseAtFreq(dataUpper, measuredFreq);
+  
+  // Interpolate between Q values
+  let phaseAtQ;
+  if (qLower === qUpper) {
+    phaseAtQ = phaseLower;
+  } else {
+    const tQ = (qClamped - qLower) / (qUpper - qLower);
+    phaseAtQ = phaseLower + tQ * (phaseUpper - phaseLower);
+  }
+  
+  // Return phase in radians
+  return deg2rad(phaseAtQ);
+}
+
+// Calculate path offset from distances
+function calculatePathOffset() {
+  const distMain = parseFloat(elById('distMain')?.value) || 0;
+  const distSub = parseFloat(elById('distSub')?.value) || 0;
+  const speedSound = parseFloat(elById('speedSound')?.value) || 343;
+  
+  const pathDiff = Math.abs(distMain - distSub);
+  const offsetSec = pathDiff / speedSound;
+  const offsetMs = offsetSec * 1000;
+  
+  // Calculate which arrives first and the signed offset
+  const mainArrivalSec = distMain / speedSound;
+  const subArrivalSec = distSub / speedSound;
+  const arrivedFirst = mainArrivalSec < subArrivalSec ? 'main' : 'sub';
+  
+  // Signed offset in sub-delay convention (positive = delay sub to align with main)
+  // If sub arrives FIRST (earlier), this will be POSITIVE (need to delay sub)
+  // If main arrives FIRST (earlier), this will be NEGATIVE (need to delay main)
+  const signedOffsetSec = mainArrivalSec - subArrivalSec;
+  
+  const pathOffsetEl = elById('pathOffsetMs');
+  if (pathOffsetEl) {
+    pathOffsetEl.textContent = offsetMs.toFixed(2) + ' ms';
+  }
+  
+  // Auto-check the appropriate first arrival checkbox
+  const mainEl = elById('arriveMain');
+  const subEl = elById('arriveSub');
+  if (mainEl && subEl) {
+    if (arrivedFirst === 'main') {
+      mainEl.checked = true;
+      subEl.checked = false;
+    } else {
+      mainEl.checked = false;
+      subEl.checked = true;
+    }
+  }
+  
+  return {
+    distMain,
+    distSub,
+    pathDiff,
+    offsetSec,
+    offsetMs,
+    arrivedFirst,
+    signedOffsetSec, // positive = sub arrives first (delay sub), negative = main arrives first (delay main)
+    mainArrivalSec,
+    subArrivalSec
+  };
+}
+
+// Combine path offset with phase-derived delay
+function calculateTotalDelay(tauPhase, pathInfo, fc) {
+  // tauPhase is phase-only delay needed to fix the phase difference (after APF)
+  // pathInfo.signedOffsetSec is physical arrival offset (positive = sub arrives first, needs delay)
+  
+  const period = 1 / fc;
+  const pathOffset = pathInfo.signedOffsetSec;
+  const target = getFirstArrivalTarget();
+  
+  // We need delay that achieves BOTH time and phase alignment
+  // Time alignment requires delay >= pathOffset (for sub) or <= pathOffset (for main)
+  // Phase alignment requires tau such that applying it minimizes phase residual
+  
+  // The phase correction has cycle ambiguity - try multiple cycles
+  // and pick the one that gives minimal phase error while respecting time constraint
+  let bestTau = pathOffset;  // Default: just do time alignment
+  let bestAbsError = Infinity;
+  
+  // Try cycles from -3 to +3
+  for (let n = -3; n <= 3; n++) {
+    const testTau = pathOffset + tauPhase + n * period;
+    
+    // Check feasibility: first-arriving source can't have negative delay
+    if (target === 'sub' && testTau < 0) continue;
+    if (target === 'main' && testTau > 0) continue;
+    
+    // For this delay value, the phase error is how far we are from the target
+    // The delay shifts phase by -360 * fc * testTau degrees
+    // We want the shift to cancel the original phase difference (which tauPhase was calculated from)
+    // So the residual error in phase alignment is related to which cycle we picked
+    
+    // Use the cycle closest to pathOffset that still respects the time constraint
+    const abserror = Math.abs(testTau - (pathOffset + tauPhase));
+    if (abserror < bestAbsError) {
+      bestAbsError = abserror;
+      bestTau = testTau;
+    }
+  }
+  
+  return bestTau;
+}
+
+// Update Q range based on selected APF model
+function updateQRangeForModel(modelKey) {
+  const model = APF_MODELS[modelKey];
+  if (!model) return;
+  
+  const qminEl = elById('qmin');
+  const qmaxEl = elById('qmax');
+  
+  if (qminEl) {
+    qminEl.value = model.qMin.toFixed(2);
+    qminEl.setAttribute('min', model.qMin.toString());
+  }
+  if (qmaxEl) {
+    qmaxEl.value = model.qMax.toFixed(2);
+    qmaxEl.setAttribute('max', model.qMax.toString());
+  }
+}
+
+/* Parsing helpers */
+function splitLineSmart(line){
+  if(line.indexOf('\t') >= 0) return line.split('\t').map(s=>s.trim()).filter(s=>s.length>0);
+  if(line.indexOf(',') >= 0) return line.split(',').map(s=>s.trim()).filter(s=>s.length>0);
+  const multi = line.split(/\s{2,}/).map(s=>s.trim()).filter(s=>s.length>0);
+  if(multi.length>1) return multi;
+  return line.split(/\s+/).map(s=>s.trim()).filter(s=>s.length>0);
+}
+function parseSmaartTxt(text){
+  const rawLines = text.split(/\r?\n/).map(l=>l.replace(/\u00A0/g,' ').trim());
+  while(rawLines.length && rawLines[0].length===0) rawLines.shift();
+  if(rawLines.length===0) return null;
+  let headerLineIdx = -1;
+  for(let i=0;i<6 && i<rawLines.length;i++){
+    const l = rawLines[i].toLowerCase();
+    if(l.includes('frequency') || l.includes('phase')){ headerLineIdx = i; break; }
+  }
+  if(headerLineIdx === -1) headerLineIdx = 0;
+  const headerTokens = splitLineSmart(rawLines[headerLineIdx]).map(s=>s.replace(/["']/g,'').trim());
+  const dataLines = rawLines.slice(headerLineIdx+1).filter(l=>l.length>0 && !l.startsWith('#') && !l.startsWith('//'));
+  const rows = [];
+  for(const ln of dataLines){
+    const cols = splitLineSmart(ln);
+    if(cols.length < 2) continue;
+    const nums = cols.map(tok=>{
+      if(tok === '*' || tok.toLowerCase()==='nan') return null;
+      const cleaned = tok.replace(/[^\d\.\-eE+]/g,'');
+      const v = parseFloat(cleaned);
+      return isNaN(v) ? null : v;
+    });
+    rows.push(nums);
+  }
+  if(rows.length === 0) return {headerTokens, cols: []};
+  const ncols = rows.reduce((m,r)=>Math.max(m,r.length),0);
+  const cols = Array.from({length:ncols}, ()=>[]);
+  for(const r of rows){
+    for(let c=0;c<ncols;c++) cols[c].push(r[c]===undefined?null:r[c]);
+  }
+  return {headerTokens, cols};
+}
+function detectFreqPhase(cols, headerTokens){
+  const n = cols.length;
+  let freqIdx = -1, phaseIdx = -1, coherenceIdx = -1, magnitudeIdx = -1;
+  if(headerTokens && headerTokens.length > 0){
+    for(let i=0;i<headerTokens.length;i++){
+      const h = headerTokens[i].toLowerCase();
+      if(freqIdx===-1 && (h.includes('freq') || h.includes('frequency') || h.includes('hz'))) freqIdx = i;
+      if(phaseIdx===-1 && h.includes('phase')) phaseIdx = i;
+      if(coherenceIdx===-1 && h.includes('coher')) coherenceIdx = i;
+      if(magnitudeIdx===-1 && (h.includes('mag') || h.includes('spl') || h.includes('level') || h.includes('db'))) magnitudeIdx = i;
+    }
+  }
+  if(freqIdx === -1) freqIdx = 0;
+  if(phaseIdx === -1) phaseIdx = (n > 2 ? 2 : Math.min(n-1,1));
+  if(freqIdx >= n) freqIdx = 0;
+  if(phaseIdx >= n) phaseIdx = Math.min(n-1,1);
+  if(coherenceIdx >= n) coherenceIdx = -1;
+  if(magnitudeIdx >= n) magnitudeIdx = -1;
+  return {freqIdx, phaseIdx, coherenceIdx, magnitudeIdx};
+}
+
+function interpNumericColumn(cols, freqIdx, valueIdx, freqsTarget){
+  if(!(typeof valueIdx === 'number' && valueIdx >= 0 && valueIdx < cols.length)){
+    return new Array(freqsTarget.length).fill(null);
+  }
+  const freqCol = cols[freqIdx];
+  const valCol = cols[valueIdx];
+  const pairs = [];
+  for(let i=0;i<freqCol.length;i++){
+    const f = freqCol[i];
+    const v = valCol[i];
+    if(!isFinite(f) || !isFinite(v) || f <= 0) continue;
+    pairs.push({f, v});
+  }
+  if(pairs.length < 2) return new Array(freqsTarget.length).fill(null);
+  pairs.sort((a,b)=>a.f-b.f);
+  const fvals = pairs.map(p=>p.f);
+  const vvals = pairs.map(p=>p.v);
+  const out = new Array(freqsTarget.length);
+  for(let i=0;i<freqsTarget.length;i++){
+    const fq = freqsTarget[i];
+    if(fq < fvals[0] || fq > fvals[fvals.length-1]){ out[i] = null; continue; }
+    let lo = 0, hi = fvals.length-1;
+    while(hi-lo>1){
+      const m = Math.floor((lo+hi)/2);
+      if(fvals[m] <= fq) lo = m; else hi = m;
+    }
+    const t = (fq - fvals[lo]) / (fvals[hi] - fvals[lo]);
+    out[i] = vvals[lo] + t*(vvals[hi] - vvals[lo]);
+  }
+  return out;
+}
+
+function interpNumericColumnGapAware(cols, freqIdx, valueIdx, freqsTarget){
+  if(!(typeof valueIdx === 'number' && valueIdx >= 0 && valueIdx < cols.length)){
+    return new Array(freqsTarget.length).fill(null);
+  }
+  const freqCol = cols[freqIdx];
+  const valCol = cols[valueIdx];
+  const pairs = [];
+  for(let i=0;i<freqCol.length;i++){
+    const f = freqCol[i];
+    const v = valCol[i];
+    if(!isFinite(f) || !isFinite(v) || f <= 0) continue;
+    pairs.push({f, v});
+  }
+  if(pairs.length < 2) return new Array(freqsTarget.length).fill(null);
+  pairs.sort((a,b)=>a.f-b.f);
+
+  const stepsOct = [];
+  for(let i=1;i<pairs.length;i++){
+    const d = Math.log2(pairs[i].f / pairs[i-1].f);
+    if(isFinite(d) && d > 0) stepsOct.push(d);
+  }
+  const medStep = median(stepsOct);
+  const gapThresholdOct = medStep ? Math.max(0.12, medStep * 3.5) : 0.5;
+
+  const segments = [];
+  let cur = [pairs[0]];
+  for(let i=1;i<pairs.length;i++){
+    const dOct = Math.log2(pairs[i].f / pairs[i-1].f);
+    if(isFinite(dOct) && dOct > gapThresholdOct){
+      if(cur.length >= 2) segments.push(cur);
+      cur = [pairs[i]];
+    } else {
+      cur.push(pairs[i]);
+    }
+  }
+  if(cur.length >= 2) segments.push(cur);
+  if(segments.length === 0) return new Array(freqsTarget.length).fill(null);
+
+  const out = new Array(freqsTarget.length).fill(null);
+  for(let i=0;i<freqsTarget.length;i++){
+    const fq = freqsTarget[i];
+    let seg = null;
+    for(let s=0;s<segments.length;s++){
+      const fmin = segments[s][0].f;
+      const fmax = segments[s][segments[s].length-1].f;
+      if(fq >= fmin && fq <= fmax){ seg = segments[s]; break; }
+    }
+    if(!seg) continue;
+    const fvals = seg.map(p=>p.f);
+    const vvals = seg.map(p=>p.v);
+    let lo = 0, hi = fvals.length-1;
+    while(hi-lo>1){
+      const m = Math.floor((lo+hi)/2);
+      if(fvals[m] <= fq) lo = m; else hi = m;
+    }
+    const t = (fq - fvals[lo]) / (fvals[hi] - fvals[lo]);
+    out[i] = vvals[lo] + t*(vvals[hi] - vvals[lo]);
+  }
+  return out;
+}
+
+// Like interpNumericColumnGapAware, but also breaks segments when source rows contain
+// missing bins between valid points (e.g., '*' in Smaart exports). This prevents
+// inventing values across no-data regions.
+function interpNumericColumnPreserveNullGaps(cols, freqIdx, valueIdx, freqsTarget){
+  if(!(typeof valueIdx === 'number' && valueIdx >= 0 && valueIdx < cols.length)){
+    return new Array(freqsTarget.length).fill(null);
+  }
+  const freqCol = cols[freqIdx];
+  const valCol = cols[valueIdx];
+  const points = [];
+  for(let i=0;i<freqCol.length;i++){
+    const f = freqCol[i];
+    const v = valCol[i];
+    if(!isFinite(f) || !isFinite(v) || f <= 0) continue;
+    points.push({f, v, idx:i});
+  }
+  if(points.length < 2) return new Array(freqsTarget.length).fill(null);
+
+  points.sort((a,b)=>a.f-b.f);
+
+  const stepsOct = [];
+  for(let i=1;i<points.length;i++){
+    const d = Math.log2(points[i].f / points[i-1].f);
+    if(isFinite(d) && d > 0) stepsOct.push(d);
+  }
+  const medStep = median(stepsOct);
+  const gapThresholdOct = medStep ? Math.max(0.12, medStep * 3.5) : 0.5;
+
+  const segments = [];
+  let cur = [points[0]];
+  for(let i=1;i<points.length;i++){
+    const dOct = Math.log2(points[i].f / points[i-1].f);
+    const hasMissingRowsBetween = (points[i].idx - points[i-1].idx) > 1;
+    if((isFinite(dOct) && dOct > gapThresholdOct) || hasMissingRowsBetween){
+      if(cur.length >= 2) segments.push(cur);
+      cur = [points[i]];
+    } else {
+      cur.push(points[i]);
+    }
+  }
+  if(cur.length >= 2) segments.push(cur);
+  if(segments.length === 0) return new Array(freqsTarget.length).fill(null);
+
+  const out = new Array(freqsTarget.length).fill(null);
+  for(let i=0;i<freqsTarget.length;i++){
+    const fq = freqsTarget[i];
+    let seg = null;
+    for(let s=0;s<segments.length;s++){
+      const fmin = segments[s][0].f;
+      const fmax = segments[s][segments[s].length-1].f;
+      if(fq >= fmin && fq <= fmax){ seg = segments[s]; break; }
+    }
+    if(!seg) continue;
+    const fvals = seg.map(p=>p.f);
+    const vvals = seg.map(p=>p.v);
+    let lo = 0, hi = fvals.length-1;
+    while(hi-lo>1){
+      const m = Math.floor((lo+hi)/2);
+      if(fvals[m] <= fq) lo = m; else hi = m;
+    }
+    const t = (fq - fvals[lo]) / (fvals[hi] - fvals[lo]);
+    out[i] = vvals[lo] + t*(vvals[hi] - vvals[lo]);
+  }
+  return out;
+}
+
+function buildMagnitudeWeights(mainMag, subMag){
+  const n = Math.max(mainMag ? mainMag.length : 0, subMag ? subMag.length : 0);
+  const pairMag = new Array(n).fill(null);
+  const finite = [];
+  for(let i=0;i<n;i++){
+    const m = mainMag ? mainMag[i] : null;
+    const s = subMag ? subMag[i] : null;
+    let p = null;
+    if(isFinite(m) && isFinite(s)) p = 0.5*(m+s);
+    else if(isFinite(m)) p = m;
+    else if(isFinite(s)) p = s;
+    pairMag[i] = p;
+    if(isFinite(p)) finite.push(p);
+  }
+  if(finite.length < 4){
+    return new Array(n).fill(1);
+  }
+  const med = median(finite);
+  const floorDb = med - 25;
+  const fullDb = med - 5;
+  const out = new Array(n).fill(1);
+  for(let i=0;i<n;i++){
+    const p = pairMag[i];
+    if(!isFinite(p)){
+      out[i] = 0.75;
+      continue;
+    }
+    const t = Math.max(0, Math.min(1, (p - floorDb) / (fullDb - floorDb)));
+    out[i] = t*t;
+  }
+  return out;
+}
+
+function interpPhaseUnwrappedGapAware(cols, freqIdx, phaseIdx, freqsTarget, qualityIdx){
+  const freqCol = cols[freqIdx], phaseCol = cols[phaseIdx];
+  const qualCol = (typeof qualityIdx === 'number' && qualityIdx >= 0 && qualityIdx < cols.length) ? cols[qualityIdx] : null;
+  const pairs = [];
+  for(let i=0;i<freqCol.length;i++){
+    const f = freqCol[i], p = phaseCol[i];
+    if(f===null || p===null || !isFinite(f) || !isFinite(p) || f <= 0) continue;
+    const q = qualCol ? qualCol[i] : null;
+    pairs.push({f, p: deg2rad(p), q: (q===null || !isFinite(q)) ? null : q});
+  }
+  if(pairs.length < 2) return null;
+  pairs.sort((a,b)=>a.f-b.f);
+
+  const stepsOct = [];
+  for(let i=1;i<pairs.length;i++){
+    const d = Math.log2(pairs[i].f / pairs[i-1].f);
+    if(isFinite(d) && d > 0) stepsOct.push(d);
+  }
+  const medStep = median(stepsOct);
+  const gapThresholdOct = medStep ? Math.max(0.12, medStep * 3.5) : 0.5;
+
+  const rawSegments = [];
+  let curSeg = [pairs[0]];
+  for(let i=1;i<pairs.length;i++){
+    const dOct = Math.log2(pairs[i].f / pairs[i-1].f);
+    if(isFinite(dOct) && dOct > gapThresholdOct){
+      if(curSeg.length > 0) rawSegments.push(curSeg);
+      curSeg = [pairs[i]];
+    } else {
+      curSeg.push(pairs[i]);
+    }
+  }
+  if(curSeg.length > 0) rawSegments.push(curSeg);
+
+  const segments = rawSegments
+    .filter(seg => seg.length >= 2)
+    .map(seg => {
+      const fvals = seg.map(s => s.f);
+      const qvals = seg.map(s => s.q);
+      const pvals = new Array(seg.length);
+      pvals[0] = seg[0].p;
+      for(let i=1;i<seg.length;i++){
+        let cur = seg[i].p;
+        const prev = pvals[i-1];
+        while(cur - prev > Math.PI) cur -= 2*Math.PI;
+        while(cur - prev < -Math.PI) cur += 2*Math.PI;
+        pvals[i] = cur;
+      }
+      return {
+        fmin: fvals[0],
+        fmax: fvals[fvals.length-1],
+        fvals,
+        pvals,
+        qvals
+      };
+    });
+
+  if(segments.length === 0) return null;
+
+  function interpOnSegment(seg, fq){
+    const fvals = seg.fvals;
+    const pvals = seg.pvals;
+    const qvals = seg.qvals;
+    if(fq <= fvals[0]) return {phase: pvals[0], quality: qvals[0]};
+    if(fq >= fvals[fvals.length-1]) return {phase: pvals[pvals.length-1], quality: qvals[qvals.length-1]};
+    let lo = 0, hi = fvals.length-1;
+    while(hi-lo>1){
+      const m = Math.floor((lo+hi)/2);
+      if(fvals[m] <= fq) lo = m; else hi = m;
+    }
+    const t = (fq - fvals[lo]) / (fvals[hi] - fvals[lo]);
+    const phase = pvals[lo] + t*(pvals[hi] - pvals[lo]);
+    const qLo = qvals[lo], qHi = qvals[hi];
+    let quality = null;
+    if(isFinite(qLo) && isFinite(qHi)) quality = qLo + t*(qHi - qLo);
+    else if(isFinite(qLo)) quality = qLo;
+    else if(isFinite(qHi)) quality = qHi;
+    return {phase, quality};
+  }
+
+  const phaseOut = new Array(freqsTarget.length).fill(null);
+  const qualityOut = new Array(freqsTarget.length).fill(null);
+  for(let i=0;i<freqsTarget.length;i++){
+    const fq = freqsTarget[i];
+    let seg = null;
+    for(let s=0;s<segments.length;s++){
+      if(fq >= segments[s].fmin && fq <= segments[s].fmax){
+        seg = segments[s];
+        break;
+      }
+    }
+    if(!seg) continue;
+    const v = interpOnSegment(seg, fq);
+    phaseOut[i] = v.phase;
+    qualityOut[i] = v.quality;
+  }
+
+  return {phase: phaseOut, quality: qualityOut};
+}
+
+function interpPhaseUnwrapped(cols, freqIdx, phaseIdx, freqsTarget, allowExtrapolate){
+  const extrapolate = allowExtrapolate !== false;
+  const freqCol = cols[freqIdx], phaseCol = cols[phaseIdx];
+  const pairs = [];
+  for(let i=0;i<freqCol.length;i++){
+    const f = freqCol[i], p = phaseCol[i];
+    if(f===null || p===null) continue;
+    pairs.push({f, p});
+  }
+  if(pairs.length < 2) return null;
+  pairs.sort((a,b)=>a.f-b.f);
+  const fvals = pairs.map(p=>p.f), pdeg = pairs.map(p=>p.p);
+  let prev = deg2rad(pdeg[0]); const unwrapped = [prev];
+  for(let i=1;i<pdeg.length;i++){
+    let cur = deg2rad(pdeg[i]);
+    while(cur - prev > Math.PI) cur -= 2*Math.PI;
+    while(cur - prev < -Math.PI) cur += 2*Math.PI;
+    unwrapped.push(cur); prev = cur;
+  }
+  function interp(fq){
+    if(fq <= fvals[0]) return extrapolate ? unwrapped[0] : null;
+    if(fq >= fvals[fvals.length-1]) return extrapolate ? unwrapped[unwrapped.length-1] : null;
+    let lo=0, hi=fvals.length-1;
+    while(hi-lo>1){
+      const m = Math.floor((lo+hi)/2);
+      if(fvals[m] <= fq) lo=m; else hi=m;
+    }
+    const t = (fq - fvals[lo]) / (fvals[hi] - fvals[lo]);
+    return unwrapped[lo] + t*(unwrapped[hi] - unwrapped[lo]);
+  }
+  return freqsTarget.map(fq => interp(fq));
+}
+function readFile(file, cb){ const r=new FileReader(); r.onload=()=>cb(parseSmaartTxt(r.result)); r.onerror=()=>cb(null); r.readAsText(file); }
+
+/* Global storage */
+let lastPlotData = null;
+let lastMarkerHits = [];
+let hoverMarkerIndex = -1;
+let lastPhaseRender = null;
+let lastMagRender = null;
+
+function freqFromCanvasX(x, leftPad, rightPad, fmin, fmax){
+  const t = Math.max(0, Math.min(1, (x - leftPad) / (rightPad - leftPad)));
+  return fmin * Math.pow(fmax / fmin, t);
+}
+
+function nearestIndexByFreq(freqs, fq){
+  if(!freqs || freqs.length === 0) return -1;
+  let idx = 0;
+  for(let i=1;i<freqs.length;i++){
+    if(Math.abs(freqs[i] - fq) < Math.abs(freqs[idx] - fq)) idx = i;
+  }
+  return idx;
+}
+
+function setPlotReadout(text){
+  const el = elById('plotReadout');
+  if(el) el.textContent = text;
+}
+
+function formatReadout(traceLabel, freq, phaseDeg, magDb){
+  const ptxt = isFinite(phaseDeg) ? (fmt2(phaseDeg) + ' deg') : 'n/a';
+  const mtxt = isFinite(magDb) ? (fmt2(magDb) + ' dB') : 'n/a';
+  return 'Trace: ' + traceLabel + ' | f: ' + fmt2(freq) + ' Hz | phase: ' + ptxt + ' | magnitude: ' + mtxt;
+}
+
+function getMagnitudeAtTraceKey(key, idx){
+  if(!lastMagRender || !lastMagRender.byKey) return null;
+  const arr = lastMagRender.byKey[key];
+  if(!arr || idx < 0 || idx >= arr.length) return null;
+  const v = arr[idx];
+  return isFinite(v) ? v : null;
+}
+
+function getPhaseAtTraceKey(key, idx){
+  if(!lastPhaseRender || !lastPhaseRender.byKey) return null;
+  const arr = lastPhaseRender.byKey[key];
+  if(!arr || idx < 0 || idx >= arr.length) return null;
+  const v = arr[idx];
+  return isFinite(v) ? v : null;
+}
+
+function getToggleState(){
+  return {
+    showAP: document.getElementById('showAP') ? document.getElementById('showAP').checked : false,
+    showMain: document.getElementById('showMain') ? document.getElementById('showMain').checked : false,
+    showSub: document.getElementById('showSub') ? document.getElementById('showSub').checked : false,
+    showMainPost: document.getElementById('showMainPost') ? document.getElementById('showMainPost').checked : false,
+    showSubPost: document.getElementById('showSubPost') ? document.getElementById('showSubPost').checked : false,
+    showCombined: document.getElementById('showCombined') ? document.getElementById('showCombined').checked : false
+  };
+}
+
+function getSelectedDelayTarget(){
+  const el = document.querySelector('input[name="delayTarget"]:checked');
+  return el ? el.value : 'sub';
+}
+
+function getFirstArrivalTarget(){
+  const mainEl = elById('arriveMain');
+  const subEl = elById('arriveSub');
+  if(mainEl && subEl){
+    if(mainEl.checked && !subEl.checked) return 'main';
+    return 'sub';
+  }
+  return 'sub';
+}
+
+function enforceFirstArrivalSelection(changed){
+  const mainEl = elById('arriveMain');
+  const subEl = elById('arriveSub');
+  if(!mainEl || !subEl) return;
+  if(changed === 'main'){
+    mainEl.checked = !!mainEl.checked;
+    subEl.checked = !mainEl.checked;
+  } else if(changed === 'sub'){
+    subEl.checked = !!subEl.checked;
+    mainEl.checked = !subEl.checked;
+  }
+  if(!mainEl.checked && !subEl.checked){
+    subEl.checked = true;
+  }
+}
+
+function elById(id){
+  return document.getElementById(id);
+}
+
+function bindIf(el, eventName, handler){
+  if(el) el.addEventListener(eventName, handler);
+}
+
+function getRecommendedDelayFromTauSub(tauSubRef){
+  // Positive tauSubRef means delay Sub; negative means delay Main.
+  return {
+    target: tauSubRef >= 0 ? 'sub' : 'main',
+    delaySec: Math.abs(tauSubRef)
+  };
+}
+
+function getDelayForCurrentTarget(tauSubRef){
+  const target = getSelectedDelayTarget();
+  const rawDelaySec = target === 'main' ? -tauSubRef : tauSubRef;
+  return {
+    target,
+    rawDelaySec,
+    delaySec: Math.max(0, rawDelaySec),
+    feasible: rawDelaySec >= 0
+  };
+}
+
+function getDelayForFirstArrival(tauSubRef){
+  const target = getFirstArrivalTarget();
+  const rawDelaySec = target === 'main' ? -tauSubRef : tauSubRef;
+  return {
+    target,
+    rawDelaySec,
+    delaySec: Math.max(0, rawDelaySec),
+    feasible: rawDelaySec >= 0
+  };
+}
+
+function formatFirstArrivalDelayText(tauWithApf, tauBypassed){
+  const withApf = getDelayForFirstArrival(tauWithApf);
+  const bypassed = getDelayForFirstArrival(tauBypassed);
+  return 'First-arrival delay with APF: ' + fmt2(secToMs(withApf.delaySec)) + ' ms on ' + (withApf.target === 'sub' ? 'Sub' : 'Main') +
+    ' | APF bypassed: ' + fmt2(secToMs(bypassed.delaySec)) + ' ms on ' + (bypassed.target === 'sub' ? 'Sub' : 'Main');
+}
+
+function isPlotApfEnabled(){
+  if(elById('plotUseApf')) return !!elById('plotUseApf').checked;
+  return !(elById('bypassApf') && elById('bypassApf').checked);
+}
+
+function isPlotDelayEnabled(){
+  if(elById('plotUseDelay')) return !!elById('plotUseDelay').checked;
+  return !(elById('bypassDelay') && elById('bypassDelay').checked);
+}
+
+function syncBypassWithPlotToggles(){
+  if(elById('bypassApf')) elById('bypassApf').checked = !isPlotApfEnabled();
+  if(elById('bypassDelay')) elById('bypassDelay').checked = !isPlotDelayEnabled();
+}
+
+function computeResidualAtFcWithDelay(mainDeg, subDeg, fc, delaySec, target){
+  const shiftDeg = -360 * fc * delaySec;
+  const mainShifted = target === 'main' ? mainDeg + shiftDeg : mainDeg;
+  const subShifted = target === 'sub' ? subDeg + shiftDeg : subDeg;
+  return wrapDeg180(mainShifted - subShifted);
+}
+
+function tauFromPhaseDiffAtFc(diffDeg, fc){
+  // Sub-target convention: positive tau delays sub.
+  return -diffDeg / (360 * fc);
+}
+
+function normalizeTauToFirstArrival(tauSubRef, fc){
+  if(!(isFinite(tauSubRef) && isFinite(fc) && fc > 0)) return tauSubRef;
+  const period = 1 / fc;
+  const target = getFirstArrivalTarget();
+  if(target === 'sub' && tauSubRef < 0){
+    return tauSubRef + period * Math.ceil((-tauSubRef) / period);
+  }
+  if(target === 'main' && tauSubRef > 0){
+    return tauSubRef - period * Math.ceil(tauSubRef / period);
+  }
+  return tauSubRef;
+}
+
+function isTauFeasibleForFirstArrival(tauSubRef){
+  const target = getFirstArrivalTarget();
+  return target === 'sub' ? tauSubRef >= 0 : tauSubRef <= 0;
+}
+
+function smoothLogFreq(freqs, values, smoothOct){
+  if(!(smoothOct > 0) || !freqs || !values || freqs.length !== values.length) return values.slice();
+  const n = freqs.length;
+  const out = new Array(n);
+  const half = smoothOct * 0.5;
+  for(let i=0;i<n;i++){
+    const vi = values[i];
+    if(vi === null || vi === undefined || !isFinite(vi)){
+      out[i] = null;
+      continue;
+    }
+    const fi = freqs[i];
+    let sum = 0;
+    let wsum = 0;
+    for(let j=0;j<n;j++){
+      const vj = values[j];
+      if(vj === null || vj === undefined || !isFinite(vj)) continue;
+      const fj = freqs[j];
+      const dOct = Math.abs(Math.log2(fj/fi));
+      if(dOct > half) continue;
+      // Raised-cosine weighting keeps local shape better than boxcar.
+      const w = 0.5 * (1 + Math.cos(Math.PI * dOct / half));
+      sum += vj * w;
+      wsum += w;
+    }
+    out[i] = wsum > 0 ? (sum/wsum) : null;
+  }
+  return out;
+}
+
+function getCoherenceThreshold(){
+  const el = elById('cohThreshold');
+  let raw = parseFloat(el ? el.value : '0.5');
+  if(!isFinite(raw)) raw = 0.5;
+  // Accept either unit-scale (0..1) or percent (0..100) user input.
+  let t = raw > 1 ? (raw / 100) : raw;
+  if(!isFinite(t)) t = 0.5;
+  t = Math.max(0, Math.min(1, t));
+  return t;
+}
+
+function getSubMaxHz(commit){
+  const el = elById('subMaxHz');
+  let hz = parseFloat(el ? el.value : '20000');
+  if(!isFinite(hz)) hz = 20000;
+  hz = Math.max(20, Math.min(20000, hz));
+  if(commit && el) el.value = String(Math.round(hz));
+  return hz;
+}
+
+function normalizeCoherenceValue(v){
+  if(!isFinite(v)) return null;
+  return v > 1.5 ? (v / 100) : v;
+}
+
+// Sub masking (Smaart-like): per-bin coherence threshold blanking + optional max-frequency cutoff.
+// Any bin with coherence below threshold is blanked. Blanked bins are rendered as gaps (null), not 0.
+function buildSubMask(freqs, magArr, cohArr, threshold, cutoffHz){
+  const n = freqs.length;
+  const keep = new Array(n).fill(true);
+  const thr = isFinite(threshold) ? threshold : 0.5;
+  const fCut = isFinite(cutoffHz) ? cutoffHz : 200;
+
+  if(n === 0) return keep;
+
+  // Check whether the file actually contains valid coherence data.
+  let anyValidCoh = false;
+  if(cohArr && cohArr.length === n){
+    for(let i=0;i<n;i++){
+      const c = normalizeCoherenceValue(cohArr[i]);
+      if(isFinite(c) && c > 0){ anyValidCoh = true; break; }
+    }
+  }
+
+  for(let i=0;i<n;i++){
+    if(freqs[i] > fCut){
+      keep[i] = false;
+      continue;
+    }
+    if(anyValidCoh && thr > 0){
+      const c = normalizeCoherenceValue(cohArr[i]);
+      if(!(isFinite(c) && c >= thr)){
+        keep[i] = false;
+      }
+    }
+  }
+  return keep;
+}
+
+// Keep old name as alias so existing call-sites still work
+function buildCoherenceKeepMaskAbovePassband(freqs, magArr, cohArr, threshold, forceFromHighEdge){
+  return buildSubMask(freqs, magArr, cohArr, threshold, getSubMaxHz(false));
+}
+
+function applyKeepMask(values, keepMask){
+  if(!values) return [];
+  if(!keepMask || keepMask.length !== values.length) return values.slice();
+  const out = new Array(values.length);
+  for(let i=0;i<values.length;i++){
+    out[i] = keepMask[i] ? values[i] : null;
+  }
+  return out;
+}
+
+function applySubFrequencyCutoffMask(freqs, keepMask, cutoffHz){
+  if(!freqs || !keepMask || freqs.length !== keepMask.length) return keepMask;
+  const out = keepMask.slice();
+  const fCut = isFinite(cutoffHz) ? cutoffHz : 200;
+  for(let i=0;i<out.length;i++){
+    if(freqs[i] > fCut) out[i] = false;
+  }
+  return out;
+}
+
+function addGainDb(values, gainDb){
+  const g = isFinite(gainDb) ? gainDb : 0;
+  if(!values) return [];
+  const out = new Array(values.length);
+  for(let i=0;i<values.length;i++){
+    const v = values[i];
+    out[i] = (v === null || v === undefined || !isFinite(v)) ? null : (v + g);
+  }
+  return out;
+}
+
+function getPlotScaleRange(){
+  const minEl = elById('plotMinHz');
+  const maxEl = elById('plotMaxHz');
+  const rawMin = parseFloat(minEl ? minEl.value : '20');
+  const rawMax = parseFloat(maxEl ? maxEl.value : '20000');
+  let minHz = isFinite(rawMin) ? rawMin : 20;
+  let maxHz = isFinite(rawMax) ? rawMax : 20000;
+  minHz = Math.max(20, Math.min(20000, minHz));
+  maxHz = Math.max(20, Math.min(20000, maxHz));
+  if(maxHz <= minHz){
+    if(minHz >= 20000) minHz = 19999;
+    maxHz = Math.min(20000, Math.max(minHz + 1, minHz * 1.01));
+  }
+  if(minEl) minEl.value = String(Math.round(minHz));
+  if(maxEl) maxEl.value = String(Math.round(maxHz));
+  return {minHz, maxHz};
+}
+
+function sumPhaseDeg(mainDeg, subDeg){
+  const mr = deg2rad(mainDeg);
+  const sr = deg2rad(subDeg);
+  const xr = Math.cos(mr) + Math.cos(sr);
+  const yi = Math.sin(mr) + Math.sin(sr);
+  return rad2deg(Math.atan2(yi, xr));
+}
+
+function sumPhaseDegWeighted(mainDeg, subDeg, mainMagDb, subMagDb){
+  if(!(isFinite(mainDeg) && isFinite(subDeg) && isFinite(mainMagDb) && isFinite(subMagDb))) return null;
+  const a = Math.pow(10, mainMagDb / 20);
+  const b = Math.pow(10, subMagDb / 20);
+  const mr = deg2rad(mainDeg);
+  const sr = deg2rad(subDeg);
+  const xr = a*Math.cos(mr) + b*Math.cos(sr);
+  const yi = a*Math.sin(mr) + b*Math.sin(sr);
+  return rad2deg(Math.atan2(yi, xr));
+}
+
+function applyManualApfParams(f0, q){
+  if(!lastPlotData || !lastPlotData.exact) return false;
+  if(!(isFinite(f0) && f0 > 0 && isFinite(q) && q > 0)) return false;
+
+  const freqsPlot = lastPlotData.freqsPlot;
+  const omega0 = 2*Math.PI*f0;
+  const applyMain = !!lastPlotData.exact.applyMain;
+  const applySub = !!lastPlotData.exact.applySub;
+  const apfModelKey = elById('apfModel')?.value || 'parametric';
+  const useMeasured = apfModelKey === 'dev';
+
+  const apPlotDeg = new Array(freqsPlot.length);
+  for(let i=0;i<freqsPlot.length;i++){
+    let pap;
+    if(useMeasured){
+      pap = apPhaseMeasured(freqsPlot[i], f0, q, apfModelKey);
+    } else {
+      pap = apPhaseRad(2*Math.PI*freqsPlot[i], omega0, q);
+    }
+    apPlotDeg[i] = rad2deg(pap);
+  }
+
+  const mainPostBaseDeg = new Array(freqsPlot.length);
+  const subPostBaseDeg = new Array(freqsPlot.length);
+  for(let i=0;i<freqsPlot.length;i++){
+    mainPostBaseDeg[i] = applyMain ? lastPlotData.mainBaseDeg[i] + apPlotDeg[i] : lastPlotData.mainBaseDeg[i];
+    subPostBaseDeg[i] = applySub ? lastPlotData.subBaseDeg[i] + apPlotDeg[i] : lastPlotData.subBaseDeg[i];
+  }
+
+  const fc = lastPlotData.exact.fc;
+  const mainAtFcRad = lastPlotData.exact.mainAtFcRad;
+  const subAtFcRad = lastPlotData.exact.subAtFcRad;
+  
+  let apAtFcRad;
+  if(useMeasured){
+    apAtFcRad = apPhaseMeasured(fc, f0, q, apfModelKey);
+  } else {
+    apAtFcRad = apPhaseRad(2*Math.PI*fc, omega0, q);
+  }
+  
+  const mainPostDegExact = rad2deg(mainAtFcRad + (applyMain ? apAtFcRad : 0));
+  const subPostDegExact = rad2deg(subAtFcRad + (applySub ? apAtFcRad : 0));
+  const residualExact = wrapDeg180(mainPostDegExact - subPostDegExact);
+  const tauPhaseOnly = tauFromPhaseDiffAtFc(residualExact, fc);
+  
+  // Get path offset and calculate total delay
+  const pathInfo = calculatePathOffset();
+  const tauSubRef = calculateTotalDelay(tauPhaseOnly, pathInfo, fc);
+
+  lastPlotData.apPlotDeg = apPlotDeg;
+  lastPlotData.mainPostBaseDeg = mainPostBaseDeg;
+  lastPlotData.subPostBaseDeg = subPostBaseDeg;
+  lastPlotData.exact.apAtFcRad = apAtFcRad;
+  lastPlotData.exact.tau = tauSubRef;
+  lastPlotData.exact.phaseCorrectionDeg = -2*Math.PI*fc*tauSubRef*180/Math.PI;
+
+  document.getElementById('f0val').textContent = fmt2(f0);
+  document.getElementById('qval').textContent = fmt2(q);
+  document.getElementById('copyBtn').onclick = ()=>{
+    const txt = fmt2(f0) + ',' + fmt2(q);
+    navigator.clipboard && navigator.clipboard.writeText(txt);
+  };
+  const recWithApf = getRecommendedDelayFromTauSub(tauSubRef);
+  const recNoApf = getRecommendedDelayFromTauSub(lastPlotData.exact.tauNoApf);
+  const firstWithApf = getDelayForFirstArrival(tauSubRef);
+  const firstNoApf = getDelayForFirstArrival(lastPlotData.exact.tauNoApf);
+  const userWithApf = getDelayForCurrentTarget(tauSubRef);
+  const userNoApf = getDelayForCurrentTarget(lastPlotData.exact.tauNoApf);
+  document.getElementById('tauRecInfo').textContent = formatFirstArrivalDelayText(tauSubRef, lastPlotData.exact.tauNoApf);
+
+  const fixDelay = document.getElementById('fixDelay').checked;
+  if(!fixDelay){
+    document.getElementById('delayMs').value = fmt2(secToMs(userWithApf.delaySec));
+  }
+
+  const target = userWithApf.target;
+  const tauApplied = userWithApf.delaySec;
+  const residualFinal = computeResidualAtFcWithDelay(mainPostDegExact, subPostDegExact, fc, tauApplied, target);
+  const selectedTargetNote = userWithApf.feasible ? '' :
+    '\nNote: selected target cannot realize the computed offset with non-negative delay; using 0.00 ms on ' + (target === 'sub' ? 'Sub' : 'Main') + '.';
+
+  // Get distance and path offset information
+  const apfModelName = APF_MODELS[apfModelKey]?.name || 'Unknown';
+
+  outEl.textContent =
+    'APF Model: ' + apfModelName + '\n' +
+    'Current APF f₀ = ' + fmt2(f0) + ' Hz\n' +
+    'Current APF Q  = ' + fmt2(q) + '\n\n' +
+    'Distance & Path Offset:\n' +
+    '  Distance to Main = ' + fmt2(pathInfo.distMain) + ' m (' + fmt2(pathInfo.mainArrivalSec * 1000) + ' ms arrival)\n' +
+    '  Distance to Sub  = ' + fmt2(pathInfo.distSub) + ' m (' + fmt2(pathInfo.subArrivalSec * 1000) + ' ms arrival)\n' +
+    '  Path difference  = ' + fmt2(pathInfo.pathDiff) + ' m (' + fmt2(pathInfo.offsetMs) + ' ms)\n' +
+    '  First arrival: ' + (pathInfo.arrivedFirst === 'main' ? 'Main' : 'Sub') + '\n\n' +
+    'Phase-only delay = ' + fmt2(secToMs(tauPhaseOnly)) + ' ms\n' +
+    'First-arrival time offset (with APF) = ' + fmt2(secToMs(firstWithApf.delaySec)) + ' ms on ' + (firstWithApf.target === 'sub' ? 'Sub' : 'Main') + '\n' +
+    'First-arrival time offset (APF bypassed) = ' + fmt2(secToMs(firstNoApf.delaySec)) + ' ms on ' + (firstNoApf.target === 'sub' ? 'Sub' : 'Main') + '\n' +
+    'Best-side recommendation (with APF) = ' + fmt2(secToMs(recWithApf.delaySec)) + ' ms on ' + (recWithApf.target === 'sub' ? 'Sub' : 'Main') + '\n\n' +
+    'Final residual at fc (APF + delay) = ' + fmt2(residualFinal) + '°' + selectedTargetNote;
+
+  updateDelayPreview();
+  return true;
+}
+
+function updateDelayPreview(){
+  if(!lastPlotData) return;
+  const freqs = lastPlotData.freqsPlot;
+  const target = getSelectedDelayTarget();
+  const bypass = !isPlotApfEnabled();
+  const bypassDelay = !isPlotDelayEnabled();
+  syncBypassWithPlotToggles();
+  const sr = parseFloat(elById('sr') ? elById('sr').value : '48000') || 48000;
+  const delayMs = Math.max(0, parseFloat(elById('delayMs') ? elById('delayMs').value : '0') || 0);
+  const delaySec = msToSec(delayMs);
+  const effectiveDelaySec = bypassDelay ? 0 : delaySec;
+
+  const mainPlot = lastPlotData.mainBaseDeg.slice();
+  const subPlot = lastPlotData.subBaseDeg.slice();
+  const mainPost = (bypass ? lastPlotData.mainBaseDeg : lastPlotData.mainPostBaseDeg).slice();
+  const subPost = (bypass ? lastPlotData.subBaseDeg : lastPlotData.subPostBaseDeg).slice();
+
+  for(let i=0;i<freqs.length;i++){
+    const shiftDeg = -360 * freqs[i] * effectiveDelaySec;
+    if(target === 'sub'){
+      subPlot[i] = subPlot[i] + shiftDeg;
+      subPost[i] = subPost[i] + shiftDeg;
+    } else {
+      mainPlot[i] = mainPlot[i] + shiftDeg;
+      mainPost[i] = mainPost[i] + shiftDeg;
+    }
+  }
+
+  lastPlotData.mainPlotDeg = mainPlot;
+  lastPlotData.subPlotDeg = subPlot;
+  lastPlotData.mainPostDeg = mainPost;
+  lastPlotData.subPostDeg = subPost;
+
+  const cohThr = getCoherenceThreshold();
+  if(lastPlotData.subMagPlot && lastPlotData.subCohPlot){
+    const subCoherenceMask = buildCoherenceKeepMaskAbovePassband(lastPlotData.freqsPlot, lastPlotData.subMagPlot, lastPlotData.subCohPlot, cohThr, true);
+    const subKeepMask = applySubFrequencyCutoffMask(lastPlotData.freqsPlot, subCoherenceMask, getSubMaxHz(false));
+    lastPlotData.subMagPlotMasked = applyKeepMask(lastPlotData.subMagPlot, subKeepMask);
+    lastPlotData.subPhaseMask = subKeepMask;
+  }
+
+  const fc = lastPlotData.exact ? lastPlotData.exact.fc : parseFloat(document.getElementById('fc').value);
+  const mainPostAtFc = wrapDeg180(interpLinear(freqs, mainPost, fc));
+  const subPostAtFc = wrapDeg180(interpLinear(freqs, subPost, fc));
+  const residualAtFc = wrapDeg180(interpLinear(freqs, mainPost, fc) - interpLinear(freqs, subPost, fc));
+  lastPlotData.footerText = 'At fc = ' + fmt2(fc) + ' Hz: Main post = ' + fmt2(mainPostAtFc) + '°  Sub post = ' + fmt2(subPostAtFc) + '°  Δ = ' + fmt2(residualAtFc) + '°';
+
+  const samples = effectiveDelaySec * sr;
+  if(elById('tauInfo')){
+    elById('tauInfo').textContent = bypassDelay
+      ? 'Delay bypassed (input = ' + fmt2(delayMs) + ' ms)'
+      : 'Applied delay = ' + fmt2(delayMs);
+  }
+
+  const toggles = getToggleState();
+  const resMode = elById('resMode') ? elById('resMode').value : 'exact';
+  drawMagnitudePlotFromData(lastPlotData, toggles, fc);
+  drawPlotFromData(lastPlotData, toggles, fc, resMode);
+}
+
+function drawMagnitudePlotFromData(plotData, toggles, fc){
+  const canvas = document.getElementById('magPlot');
+  if(!canvas || !plotData) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.clientWidth;
+  canvas.height = 300;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const w = canvas.width;
+  const h = canvas.height;
+  const pad = 60;
+  const freqsPlot = plotData.freqsPlot;
+  const plotFmin = plotData.plotFmin || freqsPlot[0];
+  const plotFmax = plotData.plotFmax || freqsPlot[freqsPlot.length-1];
+  const smoothOct = Math.max(0, parseFloat(document.getElementById('smoothOct')?.value) || 0);
+
+  const mainGain = parseFloat(elById('mainGainDb') ? elById('mainGainDb').value : '0') || 0;
+  const subGain = parseFloat(elById('subGainDb') ? elById('subGainDb').value : '0') || 0;
+  const mainMagRaw = addGainDb(plotData.mainMagPlot || [], mainGain);
+
+  // Always recompute the sub mask fresh at draw time so control changes are reflected immediately.
+  const subMask = buildSubMask(
+    freqsPlot,
+    plotData.subMagPlot || null,
+    plotData.subCohPlot || null,
+    getCoherenceThreshold(),
+    getSubMaxHz(false)
+  );
+
+  const subMagMaskedForDraw = applyKeepMask(plotData.subMagPlot || [], subMask);
+  const subMagRaw = addGainDb(subMagMaskedForDraw, subGain);
+  const mainMag = smoothLogFreq(freqsPlot, mainMagRaw, smoothOct);
+  const subMag = smoothLogFreq(freqsPlot, subMagRaw, smoothOct);
+
+  // Sub phase is also masked so sum magnitude vector sum uses only valid sub region.
+  const mainPhase = smoothLogFreq(freqsPlot, plotData.mainPostDeg || plotData.mainPlotDeg || [], smoothOct);
+  const subPostDegMasked = applyKeepMask(plotData.subPostDeg || plotData.subPlotDeg || [], subMask);
+  const subPhase = smoothLogFreq(freqsPlot, subPostDegMasked, smoothOct);
+  const sumMag = new Array(freqsPlot.length).fill(null);
+  for(let i=0;i<freqsPlot.length;i++){
+    const m = mainMag[i];
+    const s = subMag[i];
+    const pm = mainPhase[i];
+    const ps = subPhase[i];
+    
+    const mValid = m !== null && m !== undefined && isFinite(m);
+    const sValid = s !== null && s !== undefined && isFinite(s);
+    const pmValid = pm !== null && pm !== undefined && isFinite(pm);
+    const psValid = ps !== null && ps !== undefined && isFinite(ps);
+    
+    if(mValid && !sValid){
+      sumMag[i] = m;
+      continue;
+    }
+    if(!mValid && sValid){
+      sumMag[i] = s;
+      continue;
+    }
+    if(!(mValid && sValid && pmValid && psValid)) continue;
+    
+    const a = Math.pow(10, m/20);
+    const b = Math.pow(10, s/20);
+    const mr = deg2rad(pm);
+    const sr = deg2rad(ps);
+    const xr = a*Math.cos(mr) + b*Math.cos(sr);
+    const yi = a*Math.sin(mr) + b*Math.sin(sr);
+    const magLin = Math.sqrt(xr*xr + yi*yi);
+    sumMag[i] = 20*Math.log10(Math.max(1e-12, magLin));
+  }
+  const series = [
+    {key:'main', show: !!toggles.showMain, data: mainMag, color: '#58eb34', label: 'Main original'},
+    {key:'sub', show: !!toggles.showSub, data: subMag, color: '#eb8334', label: 'Sub original'},
+    {key:'sum', show: !!toggles.showCombined, data: sumMag, color: '#34d5eb', label: 'Estimated sum trace'}
+  ];
+
+  lastMagRender = {
+    freqs: freqsPlot,
+    fmin: plotFmin,
+    fmax: plotFmax,
+    leftPad: pad,
+    rightPad: w - pad,
+    topPad: pad,
+    bottomPad: h - pad,
+    ymin: null,
+    ymax: null,
+    series,
+    byKey: {
+      main: mainMag,
+      sub: subMag,
+      sum: sumMag
+    }
+  };
+
+  const visibleVals = [];
+  for(let s=0;s<series.length;s++){
+    if(!series[s].show) continue;
+    const arr = series[s].data;
+    for(let i=0;i<arr.length;i++) if(isFinite(arr[i])) visibleVals.push(arr[i]);
+  }
+
+  ctx.strokeStyle='#888';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, h-pad);
+  ctx.lineTo(w-pad, h-pad);
+  ctx.stroke();
+
+  if(visibleVals.length === 0){
+    ctx.fillStyle='#eee';
+    ctx.textAlign='center';
+    ctx.fillText('No magnitude traces selected or available', w/2, h/2);
+    return;
+  }
+
+  const ymin = -15;
+  const ymax = 15;
+  lastMagRender.ymin = ymin;
+  lastMagRender.ymax = ymax;
+
+  function xyFreqMag(ff, magDb){
+    const x = pad + (Math.log(ff/plotFmin)/Math.log(plotFmax/plotFmin))*(w-2*pad);
+    const y = pad + (1 - (magDb - ymin)/(ymax-ymin))*(h-2*pad);
+    return {x,y};
+  }
+
+  ctx.fillStyle='#eee';
+  ctx.textAlign='right';
+  ctx.font='12px Arial';
+  for(let k=0;k<=6;k++){
+    const yv = ymin + (ymax-ymin)*k/6;
+    const y = pad + (1 - k/6)*(h-2*pad);
+    ctx.fillText(yv.toFixed(1)+' dB', pad-8, y+4);
+    ctx.strokeStyle = Math.abs(yv) < 1e-9 ? 'rgba(255,255,255,0.9)' : '#eee';
+    ctx.lineWidth = Math.abs(yv) < 1e-9 ? 2 : 1;
+    ctx.beginPath();
+    ctx.moveTo(pad, y);
+    ctx.lineTo(w-pad, y);
+    ctx.stroke();
+  }
+
+  ctx.textAlign='center';
+  for(let e=Math.floor(Math.log10(plotFmin)); e<=Math.ceil(Math.log10(plotFmax)); e++){
+    for(let m of [1,2,5]){
+      const ff = m*Math.pow(10,e);
+      if(ff < plotFmin || ff > plotFmax) continue;
+      const x = pad + (Math.log(ff/plotFmin)/Math.log(plotFmax/plotFmin))*(w-2*pad);
+      ctx.fillText(ff.toFixed(0), x, h-pad+18);
+      ctx.strokeStyle='#eee';
+      ctx.beginPath();
+      ctx.moveTo(x, pad);
+      ctx.lineTo(x, h-pad);
+      ctx.stroke();
+    }
+  }
+
+  for(let s=0;s<series.length;s++){
+    const trace = series[s];
+    if(!trace.show || !trace.data || trace.data.length === 0) continue;
+    ctx.strokeStyle = trace.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    let penDown = false;
+    for(let i=0;i<freqsPlot.length;i++){
+      const mag = trace.data[i];
+      if(!isFinite(mag) || mag < ymin){
+        penDown = false;
+        continue;
+      }
+      const p = xyFreqMag(freqsPlot[i], mag);
+      if(!penDown){
+        ctx.moveTo(p.x, p.y);
+        penDown = true;
+      } else {
+        ctx.lineTo(p.x, p.y);
+      }
+    }
+    ctx.stroke();
+  }
+
+  const xfc = pad + (Math.log(fc/plotFmin)/Math.log(plotFmax/plotFmin))*(w-2*pad);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(200,0,0,0.9)';
+  ctx.setLineDash([6,4]);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(xfc, pad);
+  ctx.lineTo(xfc, h-pad);
+  ctx.stroke();
+  ctx.restore();
+
+  const mainAtFc = isFinite(interpLinear(freqsPlot, mainMag, fc)) ? interpLinear(freqsPlot, mainMag, fc) : null;
+  const subAtFc = isFinite(interpLinear(freqsPlot, subMag, fc)) ? interpLinear(freqsPlot, subMag, fc) : null;
+  const sumAtFc = isFinite(interpLinear(freqsPlot, sumMag, fc)) ? interpLinear(freqsPlot, sumMag, fc) : null;
+  let footer = 'Magnitude at fc = ' + fmt2(fc) + ' Hz';
+  if(mainAtFc !== null) footer += ': Main = ' + fmt2(mainAtFc) + ' dB';
+  if(subAtFc !== null) footer += (mainAtFc !== null ? '  ' : ': ') + 'Sub = ' + fmt2(subAtFc) + ' dB';
+  if(sumAtFc !== null) footer += ((mainAtFc !== null || subAtFc !== null) ? '  ' : ': ') + 'Sum = ' + fmt2(sumAtFc) + ' dB';
+  ctx.fillStyle='#eee';
+  ctx.textAlign='center';
+  ctx.fillText(footer, w/2, h - 8);
+}
+
+/* Draw function */
+function drawPlotFromData(plotData, toggles, fc, resMode){
+  const canvas = document.getElementById('plot');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.clientWidth; canvas.height = 300;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const w = canvas.width, h = canvas.height, pad = 60;
+
+  const freqsPlot = plotData.freqsPlot;
+  const apPlot = plotData.apPlotDeg;
+  const mainPlot = plotData.mainPlotDeg;
+  const subPlot = plotData.subPlotDeg;
+  const mainPostPlot = plotData.mainPostDeg;
+  const subPostPlot = plotData.subPostDeg;
+  const smoothOct = Math.max(0, parseFloat(document.getElementById('smoothOct')?.value) || 0);
+  const apPlotSm = smoothLogFreq(freqsPlot, apPlot, smoothOct);
+  const mainPlotSm = smoothLogFreq(freqsPlot, mainPlot, smoothOct);
+  const subPlotSm = smoothLogFreq(freqsPlot, subPlot, smoothOct);
+  const mainPostPlotSm = smoothLogFreq(freqsPlot, mainPostPlot, smoothOct);
+  const subPostPlotSm = smoothLogFreq(freqsPlot, subPostPlot, smoothOct);
+
+  // Recompute sub mask fresh from controls so any control change is reflected immediately.
+  const subMaskForPhase = buildSubMask(
+    freqsPlot,
+    plotData.subMagPlot || null,
+    plotData.subCohPlot || null,
+    getCoherenceThreshold(),
+    getSubMaxHz(false)
+  );
+  const mainGain = parseFloat(elById('mainGainDb') ? elById('mainGainDb').value : '0') || 0;
+  const subGain = parseFloat(elById('subGainDb') ? elById('subGainDb').value : '0') || 0;
+  const mainMagForPhase = smoothLogFreq(freqsPlot, addGainDb(plotData.mainMagPlot || [], mainGain), smoothOct);
+  const subMagForPhase = smoothLogFreq(
+    freqsPlot,
+    addGainDb(applyKeepMask(plotData.subMagPlot || [], subMaskForPhase), subGain),
+    smoothOct
+  );
+  const subPostPlotSmMasked = applyKeepMask(subPostPlotSm, subMaskForPhase);
+  const subPlotSmMasked = applyKeepMask(subPlotSm, subMaskForPhase);
+
+  const combinedRaw = new Array(freqsPlot.length);
+  for(let i=0;i<freqsPlot.length;i++){
+    const mPost = mainPostPlotSm[i];
+    const sPost = subPostPlotSmMasked[i];
+    const mMag = mainMagForPhase[i];
+    const sMag = subMagForPhase[i];
+    
+    const mPostValid = mPost !== null && mPost !== undefined && isFinite(mPost);
+    const sPostValid = sPost !== null && sPost !== undefined && isFinite(sPost);
+    const mMagValid = mMag !== null && mMag !== undefined && isFinite(mMag);
+    const sMagValid = sMag !== null && sMag !== undefined && isFinite(sMag);
+    
+    if(!mPostValid && !sPostValid){ combinedRaw[i] = null; continue; }
+    if(!sPostValid){ combinedRaw[i] = mPost; continue; }
+    if(!mPostValid){ combinedRaw[i] = sPost; continue; }
+    if(!sMagValid){ combinedRaw[i] = mPost; continue; }
+    if(!mMagValid){ combinedRaw[i] = sPost; continue; }
+    combinedRaw[i] = sumPhaseDegWeighted(mPost, sPost, mMag, sMag);
+  }
+
+  const phaseModeEl = document.getElementById('phaseMode');
+  const phaseMode = phaseModeEl ? phaseModeEl.value : 'wrapped';
+  const showWrapGuidesEl = document.getElementById('showWrapGuides');
+  const showWrapGuides = showWrapGuidesEl ? showWrapGuidesEl.checked : true;
+  const zeroRefAtFcEl = document.getElementById('zeroRefAtFc');
+  const zeroRefAtFc = zeroRefAtFcEl ? zeroRefAtFcEl.checked : false;
+  let refAtFc = 0;
+  if(zeroRefAtFc && plotData.exact){
+    const refIsMain = !!plotData.exact.applySub;
+    const refArrCont = refIsMain ? mainPlotSm : subPlotSm;
+    refAtFc = interpLinear(freqsPlot, refArrCont, fc);
+  }
+
+  const apShift = apPlotSm.map(v=>(v !== null && v !== undefined && isFinite(v)) ? (v - refAtFc) : null);
+  const mainShift = mainPlotSm.map(v=>(v !== null && v !== undefined && isFinite(v)) ? (v - refAtFc) : null);
+  const subShift = subPlotSmMasked.map(v=>(v !== null && v !== undefined && isFinite(v)) ? (v - refAtFc) : null);
+  const mainPostShift = mainPostPlotSm.map(v=>(v !== null && v !== undefined && isFinite(v)) ? (v - refAtFc) : null);
+  const subPostShift = subPostPlotSmMasked.map(v=>(v !== null && v !== undefined && isFinite(v)) ? (v - refAtFc) : null);
+  const combinedShift = combinedRaw.map(v=>(v !== null && v !== undefined && isFinite(v)) ? (v - refAtFc) : null);
+
+  let apPlotDisp = phaseDisplayArray(apShift, phaseMode);
+  let mainPlotDisp = phaseDisplayArray(mainShift, phaseMode);
+  let subPlotDisp = phaseDisplayArray(subShift, phaseMode);
+  let mainPostDisp = phaseDisplayArray(mainPostShift, phaseMode);
+  let subPostDisp = phaseDisplayArray(subPostShift, phaseMode);
+  const combinedWrapped = combinedShift.map(v => (v !== null && v !== undefined && isFinite(v)) ? wrapDeg180(v) : null);
+  let combinedDisp = (phaseMode === 'wrapped')
+    ? combinedWrapped
+    : unwrapDegArray(combinedWrapped);
+
+  // Sub phase already masked upstream; re-apply to display arrays to catch wrap/shift artefacts.
+  subPlotDisp = applyKeepMask(subPlotDisp, subMaskForPhase);
+  subPostDisp = applyKeepMask(subPostDisp, subMaskForPhase);
+
+  function finiteOnly(arr){
+    if(!arr) return [];
+    const out = [];
+    for(let i=0;i<arr.length;i++){
+      const v = arr[i];
+      if(v !== null && v !== undefined && isFinite(v)) out.push(v);
+    }
+    return out;
+  }
+
+  const all = [].concat(
+    toggles.showAP ? finiteOnly(apPlotDisp) : [],
+    toggles.showMain ? finiteOnly(mainPlotDisp) : [],
+    toggles.showSub ? finiteOnly(subPlotDisp) : [],
+    toggles.showMainPost ? finiteOnly(mainPostDisp) : [],
+    toggles.showSubPost ? finiteOnly(subPostDisp) : [],
+    toggles.showCombined ? finiteOnly(combinedDisp) : []
+  );
+
+  if(all.length===0){
+    ctx.strokeStyle='#888'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.stroke();
+    ctx.fillStyle='#eee'; ctx.textAlign='center';
+    ctx.fillText('No traces selected', w/2, h/2);
+    return;
+  }
+
+  const pmin = (phaseMode === 'wrapped') ? -180 : (Math.min(...all) - 12);
+  const pmax = (phaseMode === 'wrapped') ? 180 : (Math.max(...all) + 12);
+
+  // axes
+  ctx.strokeStyle='#888'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.stroke();
+  ctx.fillStyle='#eee'; ctx.textAlign='right'; ctx.font='12px Arial';
+  for(let k=0;k<=6;k++){
+    const yv = pmin + (pmax-pmin)*k/6;
+    const y = pad + (1 - k/6)*(h-2*pad);
+    ctx.fillText(yv.toFixed(0)+'°', pad-8, y+4);
+    ctx.strokeStyle='#eee'; ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w-pad, y); ctx.stroke();
+  }
+
+  // x ticks
+  ctx.textAlign='center';
+  const plotFmin = plotData.plotFmin || freqsPlot[0], plotFmax = plotData.plotFmax || freqsPlot[freqsPlot.length-1];
+  for(let e=Math.floor(Math.log10(plotFmin)); e<=Math.ceil(Math.log10(plotFmax)); e++){
+    for(let m of [1,2,5]){
+      const ff = m*Math.pow(10,e);
+      if(ff < plotFmin || ff > plotFmax) continue;
+      const x = pad + (Math.log(ff/plotFmin)/Math.log(plotFmax/plotFmin))*(w-2*pad);
+      ctx.fillText(ff.toFixed(0), x, h-pad+18);
+      ctx.strokeStyle='#eee'; ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, h-pad); ctx.stroke();
+    }
+  }
+
+  function xyFreq(ff, valDeg){
+    const x = pad + (Math.log(ff/plotFmin)/Math.log(plotFmax/plotFmin))*(w-2*pad);
+    const y = pad + (1 - (valDeg - pmin)/(pmax-pmin))*(h-2*pad);
+    return {x,y};
+  }
+
+  function drawSeries(valuesDeg, color, lineWidth, lineDash){
+    const drawVals = (phaseMode === 'wrapped') ? wrapDegArray(valuesDeg) : valuesDeg;
+    const wrapXs = [];
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.setLineDash(lineDash || []);
+    ctx.beginPath();
+    let penDown = false;
+    let prevX = 0;
+    let prevVal = 0;
+    let hasPrev = false;
+    for(let i=0;i<freqsPlot.length;i++){
+      const val = drawVals[i];
+      if(!isFinite(val)){
+        penDown = false;
+        hasPrev = false;
+        continue;
+      }
+      const {x,y} = xyFreq(freqsPlot[i], val);
+      const crossesWrap = phaseMode === 'wrapped' && hasPrev && Math.abs(val - prevVal) > 120;
+      if(!penDown || crossesWrap){
+        if(crossesWrap){
+          wrapXs.push(0.5 * (prevX + x));
+        }
+        ctx.moveTo(x,y);
+        penDown = true;
+      } else {
+        ctx.lineTo(x,y);
+      }
+      prevX = x;
+      prevVal = val;
+      hasPrev = true;
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    if(showWrapGuides && wrapXs.length > 0){
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.45;
+      ctx.lineWidth = Math.max(1, lineWidth * 0.8);
+      ctx.setLineDash([2,3]);
+      for(let i=0;i<wrapXs.length;i++){
+        const xWrap = wrapXs[i];
+        ctx.beginPath();
+        ctx.moveTo(xWrap, pad);
+        ctx.lineTo(xWrap, h-pad);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  // draw each series if toggled
+  if(toggles.showAP){
+    drawSeries(apPlotDisp, '#b3b3b3', 1.5, [4,4]);
+  }
+
+  if(toggles.showMain){
+    drawSeries(mainPlotDisp, '#58eb34', 1.5, []);
+  }
+
+  if(toggles.showSub){
+    drawSeries(subPlotDisp, '#eb8334', 1.5, []);
+  }
+
+  if(toggles.showMainPost){
+    drawSeries(mainPostDisp, '#2a82c9', 2, []);
+  }
+
+  if(toggles.showSubPost){
+    drawSeries(subPostDisp, '#eb34d8', 2, []);
+  }
+
+  if(toggles.showCombined){
+    drawSeries(combinedDisp, '#34d5eb', 2.2, []);
+  }
+
+  lastPhaseRender = {
+    freqs: freqsPlot,
+    fmin: plotFmin,
+    fmax: plotFmax,
+    leftPad: pad,
+    rightPad: w - pad,
+    topPad: pad,
+    bottomPad: h - pad,
+    pmin,
+    pmax,
+    byKey: {
+      ap: apPlotDisp,
+      main: mainPlotDisp,
+      sub: subPlotDisp,
+      mainPost: mainPostDisp,
+      subPost: subPostDisp,
+      sum: combinedDisp
+    },
+    series: [
+      {key:'ap', label:'AP phase', color:'#b3b3b3', show: !!toggles.showAP, values: apPlotDisp},
+      {key:'main', label:'Main original', color:'#58eb34', show: !!toggles.showMain, values: mainPlotDisp},
+      {key:'sub', label:'Sub original', color:'#eb8334', show: !!toggles.showSub, values: subPlotDisp},
+      {key:'mainPost', label:'Main post-APF', color:'#2a82c9', show: !!toggles.showMainPost, values: mainPostDisp},
+      {key:'subPost', label:'Sub post-APF', color:'#eb34d8', show: !!toggles.showSubPost, values: subPostDisp},
+      {key:'sum', label:'Estimated sum trace', color:'#34d5eb', show: !!toggles.showCombined, values: combinedDisp}
+    ]
+  };
+
+  // vertical line at fc and markers at fc
+  const xfc = pad + (Math.log(fc/plotFmin)/Math.log(plotFmax/plotFmin))*(w-2*pad);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(200,0,0,0.9)';
+  ctx.setLineDash([6,4]);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(xfc, pad); ctx.lineTo(xfc, h-pad); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // nearest index in freqsPlot
+  let idxFcPlot = 0;
+  for(let i=0;i<freqsPlot.length;i++) if(Math.abs(freqsPlot[i]-fc) < Math.abs(freqsPlot[idxFcPlot]-fc)) idxFcPlot = i;
+
+  function phaseValForDisplay(valCont){
+    return phaseMode === 'wrapped' ? wrapDeg180(valCont) : valCont;
+  }
+
+  // Use continuous (unwrapped) smoothed phase at fc for display markers.
+  const apAtFcCont = interpLinear(freqsPlot, apPlotSm, fc) - refAtFc;
+  const mainAtFcCont = interpLinear(freqsPlot, mainPlotSm, fc) - refAtFc;
+  const subAtFcCont = interpLinear(freqsPlot, subPlotSm, fc) - refAtFc;
+  const mainPostAtFcCont = interpLinear(freqsPlot, mainPostPlotSm, fc) - refAtFc;
+  const subPostAtFcCont = interpLinear(freqsPlot, subPostPlotSm, fc) - refAtFc;
+  const combinedAtFcCont = interpLinear(freqsPlot, combinedRaw, fc) - refAtFc;
+
+  // Alignment math should be based on unsmoothed phase.
+  const mainPostAtFcRawCont = interpLinear(freqsPlot, mainPostPlot, fc) - refAtFc;
+  const subPostAtFcRawCont = interpLinear(freqsPlot, subPostPlot, fc) - refAtFc;
+
+  const apAtFcDisp = phaseValForDisplay(apAtFcCont);
+  const mainAtFcDisp = phaseValForDisplay(mainAtFcCont);
+  const subAtFcDisp = phaseValForDisplay(subAtFcCont);
+  const mainPostAtFcDisp = phaseValForDisplay(mainPostAtFcCont);
+  const subPostAtFcDisp = phaseValForDisplay(subPostAtFcCont);
+  const combinedAtFcDisp = phaseValForDisplay(combinedAtFcCont);
+
+  function drawMarker(x,y,color){
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x,y,3.5,0,2*Math.PI); ctx.fill();
+  }
+
+  lastMarkerHits = [];
+
+  function pushMarker(x, y, color, label, valueDeg){
+    drawMarker(x, y, color);
+    lastMarkerHits.push({x, y, color, label, valueDeg});
+  }
+
+  if(toggles.showMain){ const p = xyFreq(fc, mainAtFcDisp); pushMarker(p.x,p.y,'#58eb34','Main original', mainAtFcDisp); }
+  if(toggles.showSub){  const p = xyFreq(fc, subAtFcDisp);  pushMarker(p.x,p.y,'#eb8334','Sub original', subAtFcDisp); }
+  if(toggles.showMainPost){ const p = xyFreq(fc, mainPostAtFcDisp); pushMarker(p.x,p.y,'#2a82c9','Main post-APF', mainPostAtFcDisp); }
+  if(toggles.showSubPost){  const p = xyFreq(fc, subPostAtFcDisp);  pushMarker(p.x,p.y,'#eb34d8','Sub post-APF', subPostAtFcDisp); }
+  if(toggles.showAP){ const p = xyFreq(fc, apAtFcDisp); pushMarker(p.x,p.y,'#b3b3b3','AP phase', apAtFcDisp); }
+  if(toggles.showCombined){ const p = xyFreq(fc, combinedAtFcDisp); pushMarker(p.x,p.y,'#34d5eb','Estimated sum trace', combinedAtFcDisp); }
+
+  // footer text (same math basis used by markers)
+  const footerResidual = wrapDeg180(mainPostAtFcRawCont - subPostAtFcRawCont);
+  const footerText = 'At fc = ' + fmt2(fc) + ' Hz: Main post = ' + fmt2(mainPostAtFcDisp) + '°  Sub post = ' + fmt2(subPostAtFcDisp) + '°  Δ = ' + fmt2(footerResidual) + '°';
+  ctx.fillStyle='#eee'; ctx.textAlign='center';
+  ctx.fillText(footerText, w/2, h - 8);
+
+  // compute residuals and display chosen mode in the canvas
+  const mainAtFcPlot = mainPostPlot[idxFcPlot] - refAtFc;
+  const subAtFcPlot  = subPostPlot[idxFcPlot] - refAtFc;
+  const residualPlot = wrapDeg180(mainAtFcPlot - subAtFcPlot);
+
+  const residualExact = wrapDeg180(mainPostAtFcRawCont - subPostAtFcRawCont);
+
+  // show residual text on canvas (small)
+  ctx.fillStyle = '#eee';
+  ctx.textAlign = 'left';
+  const resX = pad + 6;
+  const resY = pad - 28;
+  if(resMode === 'exact' && residualExact !== null){
+    ctx.fillText('Exact-frequency residual (Main post − Sub post) = ' + residualExact.toFixed(2) + '°', resX, resY);
+  } else {
+    ctx.fillText('Plot-grid residual (Main post − Sub post) = ' + residualPlot.toFixed(2) + '°', resX, resY);
+  }
+
+  if(hoverMarkerIndex >= 0 && hoverMarkerIndex < lastMarkerHits.length){
+    const mk = lastMarkerHits[hoverMarkerIndex];
+    const txt = mk.label + ': ' + fmt2(mk.valueDeg) + '° @ ' + fmt2(fc) + ' Hz';
+    ctx.font = '12px Arial';
+    const tw = ctx.measureText(txt).width;
+    const boxW = tw + 12;
+    const boxH = 20;
+    let bx = mk.x + 10;
+    let by = mk.y - 26;
+    if(bx + boxW > w - 4) bx = mk.x - boxW - 10;
+    if(by < 4) by = mk.y + 10;
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fillRect(bx, by, boxW, boxH);
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, boxW, boxH);
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'left';
+    ctx.fillText(txt, bx + 6, by + 14);
+  }
+}
+
+/* UI wiring */
+const fileMainEl = elById('fileMain');
+const fileSubEl  = elById('fileSub');
+const mainInfo = elById('mainInfo');
+const subInfo  = elById('subInfo');
+const outEl = elById('out');
+const debugEl = elById('debug');
+const togglesRow = elById('togglesRow');
+const legendRow = elById('legendRow');
+
+let mainParsed = null, subParsed = null;
+
+function buildTraceToggles(traces, defaults){
+  togglesRow.innerHTML = '';
+  legendRow.innerHTML = '';
+  traces.forEach(t=>{
+    if(!t.present) return;
+    const lab = document.createElement('label');
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.id = t.id;
+    chk.checked = defaults[t.id] !== undefined ? !!defaults[t.id] : true;
+    lab.appendChild(chk);
+    const txt = document.createTextNode(' ' + t.label);
+    lab.appendChild(txt);
+    togglesRow.appendChild(lab);
+
+    const item = document.createElement('div');
+    item.className = 'item';
+    const sw = document.createElement('span');
+    sw.className = 'swatch';
+    sw.style.background = t.color;
+    item.appendChild(sw);
+    const ittxt = document.createElement('div');
+    ittxt.textContent = t.label;
+    item.appendChild(ittxt);
+    legendRow.appendChild(item);
+
+    chk.addEventListener('change', ()=>{
+      updateDelayPreview();
+    });
+  });
+  legendRow.style.display = 'flex';
+  legendRow.setAttribute('aria-hidden','false');
+}
+
+function renderOriginalPreviewIfReady(){
+  if(!(mainParsed && subParsed)) return;
+
+  const mainDet = detectFreqPhase(mainParsed.cols, mainParsed.headerTokens);
+  const subDet  = detectFreqPhase(subParsed.cols, subParsed.headerTokens);
+  const mainFreqIdx = mainDet.freqIdx, mainPhaseIdx = mainDet.phaseIdx;
+  const subFreqIdx  = subDet.freqIdx,  subPhaseIdx  = subDet.phaseIdx;
+  const mainMagIdx = mainDet.magnitudeIdx;
+  const subMagIdx = subDet.magnitudeIdx;
+  const mainCohIdx = mainDet.coherenceIdx;
+  const subCohIdx = subDet.coherenceIdx;
+
+  const plotScale = getPlotScaleRange();
+  const plotFmin = plotScale.minHz;
+  const plotFmax = plotScale.maxHz;
+  const pts = 900;
+  const freqsPlot = new Array(pts);
+  for(let i=0;i<pts;i++){
+    freqsPlot[i] = plotFmin*Math.pow(plotFmax/plotFmin, i/(pts-1));
+  }
+
+  const mainPlotRadFull = interpPhaseUnwrapped(mainParsed.cols, mainFreqIdx, mainPhaseIdx, freqsPlot, false);
+  const subPlotRadFull  = interpPhaseUnwrapped(subParsed.cols,  subFreqIdx,  subPhaseIdx,  freqsPlot, false);
+  if(!mainPlotRadFull || !subPlotRadFull) return;
+  const mainPlotDeg = mainPlotRadFull.map(v => isFinite(v) ? rad2deg(v) : null);
+  const subPlotDeg  = subPlotRadFull.map(v => isFinite(v) ? rad2deg(v) : null);
+
+  const mainMagPlot = interpNumericColumnGapAware(mainParsed.cols, mainFreqIdx, mainMagIdx, freqsPlot);
+  const subMagPlot = interpNumericColumnPreserveNullGaps(subParsed.cols, subFreqIdx, subMagIdx, freqsPlot);
+  const subCohPlot = interpNumericColumnPreserveNullGaps(subParsed.cols, subFreqIdx, subCohIdx, freqsPlot);
+  const subCoherenceMask = buildCoherenceKeepMaskAbovePassband(freqsPlot, subMagPlot, subCohPlot, getCoherenceThreshold(), true);
+  const subKeepMask = applySubFrequencyCutoffMask(freqsPlot, subCoherenceMask, getSubMaxHz(false));
+  const subMagPlotMasked = applyKeepMask(subMagPlot, subKeepMask);
+
+  const apPlotDeg = new Array(pts).fill(0);
+  const fc = parseFloat(elById('fc') ? elById('fc').value : '80') || 80;
+
+  lastPlotData = {
+    freqsPlot,
+    apPlotDeg,
+    mainPlotDeg,
+    subPlotDeg,
+    mainMagPlot,
+    subMagPlot,
+    subCohPlot,
+    subMagPlotMasked,
+    subPhaseMask: subKeepMask,
+    mainPostDeg: mainPlotDeg.slice(),
+    subPostDeg: subPlotDeg.slice(),
+    mainBaseDeg: mainPlotDeg.slice(),
+    subBaseDeg: subPlotDeg.slice(),
+    mainPostBaseDeg: mainPlotDeg.slice(),
+    subPostBaseDeg: subPlotDeg.slice(),
+    plotFmin,
+    plotFmax,
+    exact: {
+      fc,
+      tau: 0,
+      tauNoApf: 0,
+      applyMain: false,
+      applySub: false
+    }
+  };
+
+  const traces = [
+    {id:'showAP', label:'AP phase', color:'#b3b3b3', present:false},
+    {id:'showMain', label:'Main original', color:'#58eb34', present:true},
+    {id:'showSub', label:'Sub original', color:'#eb8334', present:true},
+    {id:'showMainPost', label:'Main post-APF', color:'#2a82c9', present:false},
+    {id:'showSubPost', label:'Sub post-APF', color:'#eb34d8', present:false},
+    {id:'showCombined', label:'Estimated sum trace', color:'#34d5eb', present:true}
+  ];
+  buildTraceToggles(traces, {
+    showMain: true,
+    showSub: true,
+    showCombined: true
+  });
+
+  outEl.textContent = 'Original traces loaded. Press Plot to solve APF and delay.';
+  debugEl.textContent = 'Preview mode: showing original traces with coherence-gated sub magnitude above pass band.';
+  updateDelayPreview();
+}
+
+function setFileStatus(el, text, state){
+  if(!el) return;
+  el.textContent = text;
+  el.classList.remove('hidden', 'loaded', 'error');
+  if(state === 'hidden') el.classList.add('hidden');
+  if(state === 'loaded') el.classList.add('loaded');
+  if(state === 'error') el.classList.add('error');
+}
+
+if(fileMainEl) fileMainEl.onchange = ()=> {
+  const f = fileMainEl.files[0];
+  if(!f){
+    mainParsed = null;
+    setFileStatus(mainInfo, '', 'hidden');
+    return;
+  }
+  setFileStatus(mainInfo, f.name, 'selected');
+  readFile(f, parsed=>{
+    if(!parsed){
+      mainParsed = null;
+      setFileStatus(mainInfo, 'Main: parse failed', 'error');
+      return;
+    }
+    mainParsed = parsed;
+    setFileStatus(mainInfo, f.name, 'loaded');
+    renderOriginalPreviewIfReady();
+  });
+};
+if(fileSubEl) fileSubEl.onchange = ()=> {
+  const f = fileSubEl.files[0];
+  if(!f){
+    subParsed = null;
+    setFileStatus(subInfo, '', 'hidden');
+    return;
+  }
+  setFileStatus(subInfo, f.name, 'selected');
+  readFile(f, parsed=>{
+    if(!parsed){
+      subParsed = null;
+      setFileStatus(subInfo, 'Sub: parse failed', 'error');
+      return;
+    }
+    subParsed = parsed;
+    setFileStatus(subInfo, f.name, 'loaded');
+    renderOriginalPreviewIfReady();
+  });
+};
+
+const runBtn = elById('run');
+if(runBtn) runBtn.onclick = ()=> {
+  outEl.textContent = 'Working...';
+  debugEl.textContent = '';
+  try {
+    const fc = +document.getElementById('fc').value;
+    const fmin = +document.getElementById('fmin').value;
+    const fmax = +document.getElementById('fmax').value;
+    const bandOct = +document.getElementById('band').value;
+    const applyTo = document.getElementById('applyTo').value;
+    const Qmin = parseFloat(document.getElementById('qmin').value) || 0.3;
+    const Qmax = parseFloat(document.getElementById('qmax').value) || 3.0;
+
+    if(!mainParsed || !subParsed){ outEl.textContent = 'Upload both main and sub files.'; return; }
+
+    const mainDet = detectFreqPhase(mainParsed.cols, mainParsed.headerTokens);
+    const subDet  = detectFreqPhase(subParsed.cols, subParsed.headerTokens);
+    const mainFreqIdx = mainDet.freqIdx, mainPhaseIdx = mainDet.phaseIdx;
+    const subFreqIdx  = subDet.freqIdx,  subPhaseIdx  = subDet.phaseIdx;
+    const mainCohIdx = mainDet.coherenceIdx;
+    const subCohIdx  = subDet.coherenceIdx;
+    const mainMagIdx = mainDet.magnitudeIdx;
+    const subMagIdx  = subDet.magnitudeIdx;
+    const useCohWeighting = !!(elById('useCohWeighting') && elById('useCohWeighting').checked);
+
+    // build fit frequency vector
+    const f_lo = fc*Math.pow(2, -bandOct/2);
+    const f_hi = fc*Math.pow(2, bandOct/2);
+    const Nfreq = 120;
+    const freqs = new Array(Nfreq);
+    for(let i=0;i<Nfreq;i++) freqs[i] = f_lo*Math.pow(f_hi/f_lo, i/(Nfreq-1));
+
+    // interpolate unwrapped phase to freqs (internal)
+    const mainInterp = interpPhaseUnwrapped(mainParsed.cols, mainFreqIdx, mainPhaseIdx, freqs);
+    const subInterp  = interpPhaseUnwrapped(subParsed.cols,  subFreqIdx,  subPhaseIdx,  freqs);
+    if(!mainInterp || !subInterp){ outEl.textContent = 'Interpolation failed: check files.'; return; }
+
+    const mainFitInterp = interpPhaseUnwrappedGapAware(mainParsed.cols, mainFreqIdx, mainPhaseIdx, freqs, mainCohIdx);
+    const subFitInterp  = interpPhaseUnwrappedGapAware(subParsed.cols,  subFreqIdx,  subPhaseIdx,  freqs, subCohIdx);
+    if(!mainFitInterp || !subFitInterp){ outEl.textContent = 'Gap-aware interpolation failed: check files.'; return; }
+    const mainMagInterp = interpNumericColumn(mainParsed.cols, mainFreqIdx, mainMagIdx, freqs);
+    const subMagInterp = interpNumericColumn(subParsed.cols, subFreqIdx, subMagIdx, freqs);
+    const magnitudeWeights = buildMagnitudeWeights(mainMagInterp, subMagInterp);
+
+    const applyMain = (applyTo === 'main');
+    const applySub  = (applyTo === 'sub');
+    if(applyTo === 'both'){
+      outEl.textContent =
+        'For relative main/sub alignment, a single 2nd-order APF must be applied to one side only. ' +
+        'Applying the same APF to both channels does not change their phase difference. ' +
+        'Set "Apply APF to" = Main only or Sub only.';
+      return;
+    }
+
+    // Gap-aware base relative phase (main - sub) for fitting only.
+    const deltaBaseFitRaw = mainFitInterp.phase.map((m,i)=> {
+      const s = subFitInterp.phase[i];
+      if(m===null || s===null || !isFinite(m) || !isFinite(s)) return null;
+      return m - s;
+    });
+    const deltaBaseFit = unwrapRadArrayWithGaps(deltaBaseFitRaw);
+    const fitWeights = new Array(freqs.length).fill(0);
+    for(let i=0;i<freqs.length;i++){
+      if(deltaBaseFit[i] === null || !isFinite(deltaBaseFit[i])) continue;
+      const qmRaw = mainFitInterp.quality[i];
+      const qsRaw = subFitInterp.quality[i];
+      const wm = (qmRaw===null || !isFinite(qmRaw)) ? 1 : Math.max(0, Math.min(1, qmRaw));
+      const ws = (qsRaw===null || !isFinite(qsRaw)) ? 1 : Math.max(0, Math.min(1, qsRaw));
+      const cohW = useCohWeighting ? (wm * ws) : 1;
+      const magW = (isFinite(magnitudeWeights[i]) && magnitudeWeights[i] > 0) ? magnitudeWeights[i] : 0;
+      const w = cohW * magW;
+      fitWeights[i] = (isFinite(w) && w > 1e-6) ? w : 0;
+    }
+
+    // APF fit (search f0 and Q)
+    const apfModelKey = elById('apfModel')?.value || 'parametric';
+    const apfModel = APF_MODELS[apfModelKey];
+    const useMeasured = apfModel && apfModel.type === 'measured';
+    const nF0 = 160;
+    let best = null;
+    const omegaArr = freqs.map(f=>2*Math.PI*f);
+    const apSign = applyMain ? 1 : -1; // contribution sign in (main - sub)
+    
+    for(let k=0;k<nF0;k++){
+      const t = k/(nF0-1);
+      const f0 = fmin*Math.pow(fmax/fmin, t);
+      const omega0 = 2*Math.PI*f0;
+      function objective(Q){
+        if(!(Q>0 && isFinite(Q))) return {score:1e12};
+        const phiAp = new Array(omegaArr.length);
+        for(let i=0;i<omegaArr.length;i++){
+          if(useMeasured){
+            phiAp[i] = apPhaseMeasured(freqs[i], f0, Q, apfModelKey);
+          } else {
+            phiAp[i] = apPhaseRad(omegaArr[i], omega0, Q);
+          }
+        }
+        const phiApUnwrapped = unwrapRadArray(phiAp);
+        const y = [];
+        const omegaUsed = [];
+        const weightsUsed = [];
+        for(let i=0;i<omegaArr.length;i++){
+          const base = deltaBaseFit[i];
+          const wi = fitWeights[i];
+          if(base===null || !isFinite(base) || !(wi > 0)) continue;
+          y.push(base + apSign*phiApUnwrapped[i]);
+          omegaUsed.push(omegaArr[i]);
+          weightsUsed.push(wi);
+        }
+        if(y.length < 3) return {score:1e12};
+        const fit = solveTauBiasWeighted(y, omegaUsed, weightsUsed);
+        // Don't reject based on first arrival feasibility yet - path offset will handle this
+        return {
+          score: fit.phaseRMS,
+          tau: fit.tau,
+          bias: fit.bias,
+          phaseRMS: fit.phaseRMS,
+          nUsed: fit.nUsed,
+          weightSum: fit.weightSum
+        };
+      }
+      let a = Qmin, b = Qmax;
+      for(let iter=0; iter<40; iter++){
+        const m1 = a + (b-a)/3;
+        const m2 = b - (b-a)/3;
+        const f1 = objective(m1).score, f2 = objective(m2).score;
+        if(f1 > f2) a = m1; else b = m2;
+      }
+      const Qbest = (a+b)/2;
+      const fitRes = objective(Qbest);
+      if(!best || fitRes.score < best.score){
+        best = {
+          f0,
+          Q: Qbest,
+          score: fitRes.score,
+          tau: fitRes.tau,
+          bias: fitRes.bias,
+          phaseRMS: fitRes.phaseRMS,
+          nUsed: fitRes.nUsed,
+          weightSum: fitRes.weightSum
+        };
+      }
+    }
+
+    if(!best){ outEl.textContent = 'No valid solution found. Try widening ranges.'; return; }
+
+    // compute APF curves for plotting on a dense plotting grid
+    const omega0 = 2*Math.PI*best.f0;
+    const pts = 900;
+    const plotScale = getPlotScaleRange();
+    const plotFmin = plotScale.minHz;
+    const plotFmax = plotScale.maxHz;
+    const freqsPlot = new Array(pts);
+    const apPlotDeg = new Array(pts);
+    const apPlotRad = new Array(pts);
+    for(let i=0;i<pts;i++){
+      const ff = plotFmin*Math.pow(plotFmax/plotFmin, i/(pts-1));
+      freqsPlot[i] = ff;
+      let pap;
+      if(useMeasured){
+        pap = apPhaseMeasured(ff, best.f0, best.Q, apfModelKey);
+      } else {
+        pap = apPhaseRad(2*Math.PI*ff, omega0, best.Q);
+      }
+      apPlotRad[i] = pap;
+      apPlotDeg[i] = rad2deg(pap);
+    }
+
+    // convert internal interpolated arrays (mainInterp/subInterp) to degrees on fit freqs
+    const mainOrigDeg = mainInterp.map(rad2deg);
+    const subOrigDeg  = subInterp.map(rad2deg);
+
+    function interpDegArray(sourceFreqs, sourceDegs, targetFreqs){
+      const out = new Array(targetFreqs.length);
+      for(let j=0;j<targetFreqs.length;j++){
+        const ff = targetFreqs[j];
+        if(ff <= sourceFreqs[0]) { out[j] = sourceDegs[0]; continue; }
+        if(ff >= sourceFreqs[sourceFreqs.length-1]) { out[j] = sourceDegs[sourceDegs.length-1]; continue; }
+        let lo = 0, hi = sourceFreqs.length-1;
+        while(hi-lo>1){
+          const m = Math.floor((lo+hi)/2);
+          if(sourceFreqs[m] <= ff) lo = m; else hi = m;
+        }
+        const t = (ff - sourceFreqs[lo]) / (sourceFreqs[hi] - sourceFreqs[lo]);
+        out[j] = sourceDegs[lo] + t*(sourceDegs[hi] - sourceDegs[lo]);
+      }
+      return out;
+    }
+
+    const mainPlotRadFull = interpPhaseUnwrapped(mainParsed.cols, mainFreqIdx, mainPhaseIdx, freqsPlot, false);
+    const subPlotRadFull  = interpPhaseUnwrapped(subParsed.cols,  subFreqIdx,  subPhaseIdx,  freqsPlot, false);
+    const mainPlotDeg = mainPlotRadFull.map(v => isFinite(v) ? rad2deg(v) : null);
+    const subPlotDeg  = subPlotRadFull.map(v => isFinite(v) ? rad2deg(v) : null);
+    const mainMagPlot = interpNumericColumnGapAware(mainParsed.cols, mainFreqIdx, mainMagIdx, freqsPlot);
+    const subMagPlot = interpNumericColumnPreserveNullGaps(subParsed.cols, subFreqIdx, subMagIdx, freqsPlot);
+    const subCohPlot = interpNumericColumnPreserveNullGaps(subParsed.cols, subFreqIdx, subCohIdx, freqsPlot);
+    const subCoherenceMask = buildCoherenceKeepMaskAbovePassband(freqsPlot, subMagPlot, subCohPlot, getCoherenceThreshold(), true);
+    const subKeepMask = applySubFrequencyCutoffMask(freqsPlot, subCoherenceMask, getSubMaxHz(false));
+    const subMagPlotMasked = applyKeepMask(subMagPlot, subKeepMask);
+
+    // compute post-APF traces with fixed physical sign
+    const mainPostRaw = new Array(pts), subPostRaw = new Array(pts);
+    for(let i=0;i<pts;i++){
+      mainPostRaw[i] = applyMain ? mainPlotDeg[i] + apPlotDeg[i] : mainPlotDeg[i];
+      subPostRaw[i]  = applySub  ? subPlotDeg[i]  + apPlotDeg[i] : subPlotDeg[i];
+    }
+
+    // find index nearest fc in freqs (for display)
+    let idxFc = 0;
+    for(let i=0;i<freqs.length;i++) if(Math.abs(freqs[i]-fc) < Math.abs(freqs[idxFc]-fc)) idxFc = i;
+
+    // exact interpolation at fc
+    const mainAtFcRad = interpLinear(freqs, mainInterp, fc);
+    const subAtFcRad  = interpLinear(freqs, subInterp, fc);
+    const mainWrapped = wrapDeg180(rad2deg(mainAtFcRad));
+    const subWrapped  = wrapDeg180(rad2deg(subAtFcRad));
+    const phaseDiffWrapped = wrapDeg180(mainWrapped - subWrapped);
+
+    // compute exact-frequency AP phase at fc (radians)
+    let apAtFcRad;
+    if(useMeasured){
+      apAtFcRad = apPhaseMeasured(fc, best.f0, best.Q, apfModelKey);
+    } else {
+      apAtFcRad = apPhaseRad(2*Math.PI*fc, omega0, best.Q);
+    }
+
+    const mainPostDegExact = rad2deg(mainAtFcRad + (applyMain ? apAtFcRad : 0));
+    const subPostDegExact  = rad2deg(subAtFcRad  + (applySub  ? apAtFcRad : 0));
+    const residualExact = wrapDeg180(mainPostDegExact - subPostDegExact);
+
+    // Build final post arrays
+    const mainPostDeg = new Array(pts);
+    const subPostDeg  = new Array(pts);
+    for(let i=0;i<pts;i++){
+      mainPostDeg[i] = mainPostRaw[i];
+      subPostDeg[i] = subPostRaw[i];
+    }
+
+    // Delay recommendation - now accounting for BOTH phase and path offset
+    // The phase difference at fc BEFORE any delay (but AFTER APF):
+    const residualBeforeDelay = residualExact;
+    
+    // Get path offset information
+    const pathInfo = calculatePathOffset();
+    const pathOffset = pathInfo.signedOffsetSec;
+    const period = 1 / fc;
+    
+    // The phase measurements already include the propagation delay effects
+    // We need to find the electronic delay that minimizes phase residual
+    // The path offset helps us pick the right cycle (avoids ±N period ambiguity)
+    
+    const tauPhaseIdeal = tauFromPhaseDiffAtFc(residualBeforeDelay, fc);  // Ideal phase correction
+    
+    // Find which cycle of tauPhaseIdeal is closest to pathOffset
+    // This is the delay that both time-aligns AND phase-aligns
+    let tau = pathOffset;  // Default to just time alignment
+    let tauNoApf = pathOffset;
+    let minDistWithApf = Infinity;
+    let minDistNoApf = Infinity;
+    
+    const firstArrivalTarget = getFirstArrivalTarget();
+    for (let n = -5; n <= 5; n++) {
+      const testTau = tauPhaseIdeal + n * period;
+      
+      // Check if delay is feasible (non-negative for first-arriving source)
+      if (firstArrivalTarget === 'sub' && testTau < 0) continue;
+      if (firstArrivalTarget === 'main' && testTau > 0) continue;
+      
+      // Pick the cycle closest to pathOffset
+      const dist = Math.abs(testTau - pathOffset);
+      if (dist < minDistWithApf) {
+        minDistWithApf = dist;
+        tau = testTau;
+      }
+    }
+    
+    // Same for bypass case (no APF)
+    const tauNoApfPhaseOnly = tauFromPhaseDiffAtFc(phaseDiffWrapped, fc);
+    for (let n = -5; n <= 5; n++) {
+      const testTau = tauNoApfPhaseOnly + n * period;
+      
+      if (firstArrivalTarget === 'sub' && testTau < 0) continue;
+      if (firstArrivalTarget === 'main' && testTau > 0) continue;
+      
+      const dist = Math.abs(testTau - pathOffset);
+      if (dist < minDistNoApf) {
+        minDistNoApf = dist;
+        tauNoApf = testTau;
+      }
+    }
+    
+    const biasDeg = 0;
+    const recWithApf = getRecommendedDelayFromTauSub(tau);
+    const recNoApf = getRecommendedDelayFromTauSub(tauNoApf);
+    const firstWithApf = getDelayForFirstArrival(tau);
+    const firstNoApf = getDelayForFirstArrival(tauNoApf);
+    const userWithApf = getDelayForCurrentTarget(tau);
+    const userNoApf = getDelayForCurrentTarget(tauNoApf);
+
+    // phase correction at fc (degrees) produced by delaying sub by tau: delta_deg = -omega_fc * tau * 180/pi
+    const omegaFc = 2*Math.PI*fc;
+    const phaseCorrectionDeg = -omegaFc * tau * 180/Math.PI;
+
+    // show badges and results
+    document.getElementById('badges').style.display = 'flex';
+    document.getElementById('apfEditRow').style.display = 'flex';
+    document.getElementById('f0val').textContent = fmt2(best.f0);
+    document.getElementById('qval').textContent = fmt2(best.Q);
+    document.getElementById('copyBtn').onclick = ()=>{ const txt = fmt2(best.f0) + ',' + fmt2(best.Q); navigator.clipboard && navigator.clipboard.writeText(txt); };
+    document.getElementById('editF0').value = fmt2(best.f0);
+    document.getElementById('editQ').value = fmt2(best.Q);
+
+    // Predict final residual at fc with APF + delay using selected target.
+    const target = userWithApf.target;
+    const tauApplied = userWithApf.delaySec;
+    const residualFinal = computeResidualAtFcWithDelay(mainPostDegExact, subPostDegExact, fc, tauApplied, target);
+    const selectedTargetNote = userWithApf.feasible ? '' :
+      '<br>Note: selected target cannot realize the computed offset with non-negative delay; using 0.00 ms on ' + (target === 'sub' ? 'Sub' : 'Main') + '.';
+
+    // Get distance and path offset information
+    const apfModelName = APF_MODELS[apfModelKey]?.name || 'Unknown';
+
+    outEl.innerHTML =
+      '<strong>APF Model: ' + apfModelName + '</strong><br>' +
+      'Recommended APF f₀ = ' + fmt2(best.f0) + ' Hz<br>' +
+      'Recommended APF Q  = ' + fmt2(best.Q) + '<br><br>' +
+      '<strong>Distance & Path Offset:</strong><br>' +
+      '  Distance to Main = ' + fmt2(pathInfo.distMain) + ' m (' + fmt2(pathInfo.mainArrivalSec * 1000) + ' ms arrival)<br>' +
+      '  Distance to Sub  = ' + fmt2(pathInfo.distSub) + ' m (' + fmt2(pathInfo.subArrivalSec * 1000) + ' ms arrival)<br>' +
+      '  Path difference  = ' + fmt2(pathInfo.pathDiff) + ' m (' + fmt2(pathInfo.offsetMs) + ' ms)<br>' +
+      '  <em>First arrival: ' + (pathInfo.arrivedFirst === 'main' ? 'Main' : 'Sub') + '</em><br>' +
+      '  <br><br>' +
+      '<strong>Phase Analysis @ fc = ' + fmt2(fc) + ' Hz:</strong><br>' +
+      '  Main phase @ fc    = <span class="inline-primary">' + fmt2(wrapDeg180(mainWrapped)) + '°</span><br>' +
+      '  Sub phase @ fc     = <span class="inline-primary">' + fmt2(wrapDeg180(subWrapped)) + '°</span><br>' +
+      '  Phase diff (Main − Sub) before APF = <span class="inline-primary">' + fmt2(phaseDiffWrapped) + '°</span><br>' +
+      '  Residual after APF = ' + fmt2(residualBeforeDelay) + '°<br><br>' +
+      '<strong>Delay Recommendations:</strong><br>' +
+      'Electronic delay (with APF) = <span class="inline-primary">' + fmt2(secToMs(firstWithApf.delaySec)) + ' ms on ' + (firstWithApf.target === 'sub' ? 'Sub' : 'Main') + '</span><br>' +
+      'Electronic delay (APF bypassed) = ' + fmt2(secToMs(firstNoApf.delaySec)) + ' ms on ' + (firstNoApf.target === 'sub' ? 'Sub' : 'Main') + '<br>' +
+      'Best-side recommendation (with APF) = ' + fmt2(secToMs(recWithApf.delaySec)) + ' ms on ' + (recWithApf.target === 'sub' ? 'Sub' : 'Main') + '<br>' +
+      'Phase correction from delay at fc = ' + fmt2(phaseCorrectionDeg) + '°<br><br>' +
+      'Final residual at fc (APF + delay) = ' + fmt2(residualFinal) + '°' + selectedTargetNote;
+
+    debugEl.textContent =
+      'Debug: APF Model = ' + apfModelName + '\n' +
+      'AP target = ' + (applyMain ? 'Main' : 'Sub') + '\n' +
+      'Weighting = ' + (useCohWeighting ? 'Coherence x Magnitude' : 'Magnitude only') + '\n' +
+      'Path offset = ' + fmt2(pathInfo.offsetMs) + ' ms (' + fmt2(pathInfo.pathDiff) + ' m at ' + fmt2(pathInfo.distMain > 0 || pathInfo.distSub > 0 ? parseFloat(elById('speedSound')?.value || 343) : 343) + ' m/s)\n' +
+      'Exact fc AP phase = ' + fmt2(rad2deg(apAtFcRad)) + '°\n' +
+      'Fit phase RMS (weighted) = ' + fmt2(rad2deg(best.phaseRMS)) + '°\n' +
+      'Fit points used = ' + String(best.nUsed || 0) + ' | total fit weight = ' + fmt2(best.weightSum || 0) + '\n' +
+      'Fitted constant phase bias (not used for recommendation) = ' + fmt2(biasDeg) + '°\n' +
+      'Tau@fc with APF = ' + fmt2(secToMs(tau)) + ' ms ; Tau@fc bypass APF = ' + fmt2(secToMs(tauNoApf)) + ' ms\n' +
+      'Phase correction at fc from applied delay = ' + fmt2(phaseCorrectionDeg) + '°\n' +
+      'If residual remains large, source traces may not be representable by one 2nd-order APF + pure delay in this band.';
+
+    // store lastPlotData for toggles and preview updates
+    lastPlotData = {
+      freqsPlot,
+      apPlotDeg,
+      mainPlotDeg,
+      subPlotDeg,
+      mainMagPlot,
+      subMagPlot,
+      subCohPlot,
+      subMagPlotMasked,
+      subPhaseMask: subKeepMask,
+      mainPostDeg,
+      subPostDeg,
+      footerText: 'At fc = ' + fmt2(fc) + ' Hz: Main = ' + fmt2(mainWrapped) + '°  Sub = ' + fmt2(subWrapped) + '°  Δ_exact = ' + fmt2(residualExact) + '°',
+      mainBaseDeg: mainPlotDeg.slice(),
+      subBaseDeg: subPlotDeg.slice(),
+      mainPostBaseDeg: mainPostDeg.slice(),
+      subPostBaseDeg: subPostDeg.slice(),
+      plotFmin,
+      plotFmax,
+      exact: {
+        fc: fc,
+        fcIndex: idxFc,
+        mainAtFcRad: mainAtFcRad,
+        subAtFcRad: subAtFcRad,
+        apAtFcRad: apAtFcRad,
+        applyMain: applyMain,
+        applySub: applySub,
+        freqsFit: freqs,
+        mainInterpRad: mainInterp,
+        subInterpRad: subInterp,
+        tau: tau,
+        tauNoApf: tauNoApf,
+        phaseCorrectionDeg: phaseCorrectionDeg,
+        biasRad: 0
+      }
+    };
+
+    if(elById('plotUseApf')) elById('plotUseApf').checked = true;
+    if(elById('plotUseDelay')) elById('plotUseDelay').checked = true;
+    syncBypassWithPlotToggles();
+    document.getElementById('delayMs').value = fmt2(secToMs(userWithApf.delaySec));
+    document.getElementById('tauRecInfo').textContent = formatFirstArrivalDelayText(tau, tauNoApf);
+    document.getElementById('undoDelayBtn').disabled = false;
+
+    // build toggles dynamically and legend based on which traces exist
+    const traces = [
+      {id:'showAP', label:'AP phase', color:'#b3b3b3', present:true},
+      {id:'showMain', label:'Main original', color:'#58eb34', present:true},
+      {id:'showSub', label:'Sub original', color:'#eb8334', present:true},
+      {id:'showMainPost', label:'Main post‑APF', color:'#2a82c9', present: applyMain},
+      {id:'showSubPost', label:'Sub post‑APF', color:'#eb34d8', present: applySub},
+      {id:'showCombined', label:'Estimated sum trace', color:'#34d5eb', present: true}
+    ];
+    buildTraceToggles(traces, {
+      showAP: true,
+      showMain: true,
+      showSub: true,
+      showMainPost: true,
+      showSubPost: true,
+      showCombined: true
+    });
+
+    // initial draw using current toggles (all present toggles default to checked)
+    updateDelayPreview();
+
+  } catch(err) {
+    console.error(err);
+    outEl.textContent = 'Error during plotting: ' + (err && err.message ? err.message : String(err)) + '\nSee console for details.';
+  }
+};
+
+/* Residual mode change redraw */
+bindIf(elById('resMode'), 'change', ()=>{
+  updateDelayPreview();
+});
+
+bindIf(elById('phaseMode'), 'change', ()=>{
+  updateDelayPreview();
+});
+
+bindIf(elById('plotUseApf'), 'change', ()=>{
+  syncBypassWithPlotToggles();
+  if(lastPlotData && lastPlotData.exact && !(elById('fixDelay') && elById('fixDelay').checked)){
+    const recTau = isPlotApfEnabled() ? lastPlotData.exact.tau : lastPlotData.exact.tauNoApf;
+    const userRec = getDelayForCurrentTarget(recTau);
+    if(elById('delayMs')) elById('delayMs').value = fmt2(secToMs(userRec.delaySec));
+  }
+  updateDelayPreview();
+});
+
+bindIf(elById('useCohWeighting'), 'change', ()=>{
+  // Removed auto-run - user must press Plot button
+  // if(lastPlotData && runBtn && typeof runBtn.onclick === 'function' && mainParsed && subParsed){
+  //   runBtn.onclick();
+  // }
+});
+
+bindIf(elById('plotUseDelay'), 'change', ()=>{
+  syncBypassWithPlotToggles();
+  updateDelayPreview();
+});
+
+bindIf(elById('zeroRefAtFc'), 'change', ()=>{
+  updateDelayPreview();
+});
+
+bindIf(elById('showWrapGuides'), 'change', ()=>{
+  updateDelayPreview();
+});
+
+bindIf(elById('smoothOct'), 'input', (ev)=>{
+  const v = parseFloat(ev.target.value);
+  if(!isFinite(v)) return;
+  const clamped = Math.max(0, Math.min(2, v));
+  if(clamped !== v) ev.target.value = String(clamped);
+  updateDelayPreview();
+});
+
+bindIf(elById('smoothOct'), 'change', (ev)=>{
+  const v = parseFloat(ev.target.value);
+  const safe = isFinite(v) ? Math.max(0, Math.min(2, v)) : 0;
+  ev.target.value = String(safe);
+  updateDelayPreview();
+});
+
+bindIf(elById('plotMinHz'), 'change', ()=>{
+  getPlotScaleRange();
+  if(lastPlotData && runBtn && typeof runBtn.onclick === 'function' && mainParsed && subParsed){
+    if(elById('badges') && elById('badges').style.display !== 'none') runBtn.onclick();
+    else renderOriginalPreviewIfReady();
+  }
+});
+
+bindIf(elById('plotMaxHz'), 'change', ()=>{
+  getPlotScaleRange();
+  if(lastPlotData && runBtn && typeof runBtn.onclick === 'function' && mainParsed && subParsed){
+    if(elById('badges') && elById('badges').style.display !== 'none') runBtn.onclick();
+    else renderOriginalPreviewIfReady();
+  }
+});
+
+bindIf(elById('mainGainDb'), 'input', ()=>{ updateDelayPreview(); });
+bindIf(elById('subGainDb'), 'input', ()=>{ updateDelayPreview(); });
+bindIf(elById('cohThreshold'), 'input', ()=>{ getCoherenceThreshold(); updateDelayPreview(); });
+bindIf(elById('subMaxHz'), 'change', ()=>{ getSubMaxHz(true); updateDelayPreview(); });
+
+bindIf(elById('zoomLowBtn'), 'click', ()=>{
+  if(elById('plotMinHz')) elById('plotMinHz').value = '20';
+  if(elById('plotMaxHz')) elById('plotMaxHz').value = '150';
+  getPlotScaleRange();
+  if(mainParsed && subParsed){
+    if(elById('badges') && elById('badges').style.display !== 'none') runBtn.onclick();
+    else renderOriginalPreviewIfReady();
+  }
+});
+
+bindIf(elById('zoomFullBtn'), 'click', ()=>{
+  if(elById('plotMinHz')) elById('plotMinHz').value = '20';
+  if(elById('plotMaxHz')) elById('plotMaxHz').value = '20000';
+  getPlotScaleRange();
+  if(mainParsed && subParsed){
+    if(elById('badges') && elById('badges').style.display !== 'none') runBtn.onclick();
+    else renderOriginalPreviewIfReady();
+  }
+});
+
+// Delay controls and APF bypass behavior
+bindIf(elById('applyDelayBtn'), 'click', ()=>{
+  updateDelayPreview();
+});
+
+// Reset delay to recommended value (depends on APF bypass state)
+bindIf(elById('undoDelayBtn'), 'click', ()=>{
+  if(!lastPlotData || !lastPlotData.exact) return;
+  const bypass = !isPlotApfEnabled();
+  const recTau = bypass ? lastPlotData.exact.tauNoApf : lastPlotData.exact.tau;
+  const userRec = getDelayForCurrentTarget(recTau);
+  if(elById('delayMs')) elById('delayMs').value = fmt2(secToMs(userRec.delaySec));
+  updateDelayPreview();
+});
+
+bindIf(elById('delayMs'), 'input', ()=>{
+  updateDelayPreview();
+});
+
+bindIf(elById('sr'), 'input', ()=>{
+  updateDelayPreview();
+});
+
+document.querySelectorAll('input[name="delayTarget"]').forEach(el=>{
+  el.addEventListener('change', ()=>{
+    if(lastPlotData && lastPlotData.exact && !(elById('fixDelay') && elById('fixDelay').checked)){
+      const bypass = !isPlotApfEnabled();
+      const recTau = bypass ? lastPlotData.exact.tauNoApf : lastPlotData.exact.tau;
+      const userRec = getDelayForCurrentTarget(recTau);
+      if(elById('delayMs')) elById('delayMs').value = fmt2(secToMs(userRec.delaySec));
+    }
+    if(lastPlotData && lastPlotData.exact){
+      const bypass = !isPlotApfEnabled();
+      const recTau = bypass ? lastPlotData.exact.tauNoApf : lastPlotData.exact.tau;
+      if(elById('tauRecInfo')){
+        elById('tauRecInfo').textContent = formatFirstArrivalDelayText(recTau, lastPlotData.exact.tauNoApf);
+      }
+    }
+    updateDelayPreview();
+  });
+});
+
+bindIf(elById('arriveMain'), 'change', ()=>{
+  enforceFirstArrivalSelection('main');
+  // Removed auto-run - user must press Plot button
+  // if(lastPlotData && runBtn && typeof runBtn.onclick === 'function' && mainParsed && subParsed){
+  //   runBtn.onclick();
+  //   return;
+  // }
+  if(lastPlotData && lastPlotData.exact && !(elById('fixDelay') && elById('fixDelay').checked)){
+    const bypass = !isPlotApfEnabled();
+    const recTau = bypass ? lastPlotData.exact.tauNoApf : lastPlotData.exact.tau;
+    const userRec = getDelayForCurrentTarget(recTau);
+    if(elById('delayMs')) elById('delayMs').value = fmt2(secToMs(userRec.delaySec));
+  }
+  if(lastPlotData && lastPlotData.exact){
+    const bypass = !isPlotApfEnabled();
+    const recTau = bypass ? lastPlotData.exact.tauNoApf : lastPlotData.exact.tau;
+    if(elById('tauRecInfo')){
+      elById('tauRecInfo').textContent = formatFirstArrivalDelayText(recTau, lastPlotData.exact.tauNoApf);
+    }
+  }
+  updateDelayPreview();
+});
+
+bindIf(elById('arriveSub'), 'change', ()=>{
+  enforceFirstArrivalSelection('sub');
+  // Removed auto-run - user must press Plot button
+  // if(lastPlotData && runBtn && typeof runBtn.onclick === 'function' && mainParsed && subParsed){
+  //   runBtn.onclick();
+  //   return;
+  // }
+  if(lastPlotData && lastPlotData.exact && !(elById('fixDelay') && elById('fixDelay').checked)){
+    const bypass = !isPlotApfEnabled();
+    const recTau = bypass ? lastPlotData.exact.tauNoApf : lastPlotData.exact.tau;
+    const userRec = getDelayForCurrentTarget(recTau);
+    if(elById('delayMs')) elById('delayMs').value = fmt2(secToMs(userRec.delaySec));
+  }
+  if(lastPlotData && lastPlotData.exact){
+    const bypass = !isPlotApfEnabled();
+    const recTau = bypass ? lastPlotData.exact.tauNoApf : lastPlotData.exact.tau;
+    if(elById('tauRecInfo')){
+        elById('tauRecInfo').textContent = formatFirstArrivalDelayText(recTau, lastPlotData.exact.tauNoApf);
+    }
+  }
+  updateDelayPreview();
+});
+
+enforceFirstArrivalSelection('sub');
+
+bindIf(elById('bypassApf'), 'change', ()=>{
+  if(elById('plotUseApf')) elById('plotUseApf').checked = !elById('bypassApf').checked;
+  syncBypassWithPlotToggles();
+  if(!lastPlotData || !lastPlotData.exact) return;
+  const fixDelay = !!elById('fixDelay') && elById('fixDelay').checked;
+  const bypass = !isPlotApfEnabled();
+  const recTau = bypass ? lastPlotData.exact.tauNoApf : lastPlotData.exact.tau;
+  const recWithApf = getRecommendedDelayFromTauSub(lastPlotData.exact.tau);
+  const recNoApf = getRecommendedDelayFromTauSub(lastPlotData.exact.tauNoApf);
+  const userRec = getDelayForCurrentTarget(recTau);
+  if(!fixDelay){
+    if(elById('delayMs')) elById('delayMs').value = fmt2(secToMs(userRec.delaySec));
+  }
+  if(elById('tauRecInfo')){
+    elById('tauRecInfo').textContent = formatFirstArrivalDelayText(recTau, lastPlotData.exact.tauNoApf);
+  }
+  updateDelayPreview();
+});
+
+bindIf(elById('bypassDelay'), 'change', ()=>{
+  if(elById('plotUseDelay')) elById('plotUseDelay').checked = !elById('bypassDelay').checked;
+  syncBypassWithPlotToggles();
+  updateDelayPreview();
+});
+
+bindIf(elById('applyApfBtn'), 'click', ()=>{
+  if(!lastPlotData){ return; }
+  const f0 = parseFloat(elById('editF0') ? elById('editF0').value : '0');
+  const q = parseFloat(elById('editQ') ? elById('editQ').value : '0');
+  const ok = applyManualApfParams(f0, q);
+  if(!ok){
+    outEl.textContent = 'Invalid APF parameters. Enter f₀ > 0 and Q > 0.';
+  }
+});
+
+// Distance and path offset handlers
+bindIf(elById('distMain'), 'input', ()=>{
+  calculatePathOffset();
+});
+
+bindIf(elById('distSub'), 'input', ()=>{
+  calculatePathOffset();
+});
+
+bindIf(elById('speedSound'), 'input', ()=>{
+  calculatePathOffset();
+});
+
+// APF Model selection handler
+bindIf(elById('apfModel'), 'change', ()=>{
+  const modelKey = elById('apfModel')?.value;
+  if(modelKey){
+    updateQRangeForModel(modelKey);
+    // Removed auto-run - user must press Plot button
+    // if(lastPlotData && runBtn && typeof runBtn.onclick === 'function' && mainParsed && subParsed){
+    //   runBtn.onclick();
+    // }
+  }
+});
+
+// Initialize path offset and Q range on load
+setTimeout(()=>{
+  calculatePathOffset();
+  const modelKey = elById('apfModel')?.value || 'parametric';
+  updateQRangeForModel(modelKey);
+  loadDevMeasurements();
+}, 100);
+
+const plotCanvasEl = document.getElementById('plot');
+const magCanvasEl = document.getElementById('magPlot');
+
+function updateReadoutFromPhaseMouse(mx, my){
+  if(!lastPhaseRender || !lastPlotData) return;
+  const r = lastPhaseRender;
+  if(mx < r.leftPad || mx > r.rightPad || my < r.topPad || my > r.bottomPad) return;
+  const fq = freqFromCanvasX(mx, r.leftPad, r.rightPad, r.fmin, r.fmax);
+  const idx = nearestIndexByFreq(r.freqs, fq);
+  if(idx < 0) return;
+
+  const yFromPhase = (deg)=> r.topPad + (1 - (deg - r.pmin)/(r.pmax-r.pmin))*(r.bottomPad-r.topPad);
+  let best = null;
+  let bestDy = Infinity;
+  for(let i=0;i<r.series.length;i++){
+    const s = r.series[i];
+    if(!s.show || !s.values) continue;
+    const pv = s.values[idx];
+    if(!isFinite(pv)) continue;
+    const dy = Math.abs(yFromPhase(pv) - my);
+    if(dy < bestDy){
+      bestDy = dy;
+      best = s;
+    }
+  }
+  if(!best || bestDy > 16) return;
+  const phaseVal = best.values[idx];
+  const magKey = (best.key === 'main' || best.key === 'mainPost') ? 'main' :
+    ((best.key === 'sub' || best.key === 'subPost') ? 'sub' :
+    (best.key === 'sum' ? 'sum' : null));
+  const magVal = magKey ? getMagnitudeAtTraceKey(magKey, idx) : null;
+  setPlotReadout(formatReadout(best.label, r.freqs[idx], phaseVal, magVal));
+}
+
+function updateReadoutFromMagMouse(mx, my){
+  if(!lastMagRender || !lastPlotData) return;
+  const r = lastMagRender;
+  if(mx < r.leftPad || mx > r.rightPad || my < r.topPad || my > r.bottomPad) return;
+  const fq = freqFromCanvasX(mx, r.leftPad, r.rightPad, r.fmin, r.fmax);
+  const idx = nearestIndexByFreq(r.freqs, fq);
+  if(idx < 0 || !isFinite(r.ymin) || !isFinite(r.ymax)) return;
+
+  const yFromMag = (db)=> r.topPad + (1 - (db - r.ymin)/(r.ymax-r.ymin))*(r.bottomPad-r.topPad);
+  let best = null;
+  let bestDy = Infinity;
+  for(let i=0;i<r.series.length;i++){
+    const s = r.series[i];
+    if(!s.show || !s.data) continue;
+    const mv = s.data[idx];
+    if(!isFinite(mv)) continue;
+    const dy = Math.abs(yFromMag(mv) - my);
+    if(dy < bestDy){
+      bestDy = dy;
+      best = s;
+    }
+  }
+  if(!best || bestDy > 16) return;
+  const magVal = best.data[idx];
+  const phaseKey = best.key === 'sum' ? 'sum' : best.key;
+  const phaseVal = getPhaseAtTraceKey(phaseKey, idx);
+  setPlotReadout(formatReadout(best.label, r.freqs[idx], phaseVal, magVal));
+}
+
+plotCanvasEl.addEventListener('mousemove', (ev)=>{
+  if(!lastPlotData) return;
+  const rect = plotCanvasEl.getBoundingClientRect();
+  const mx = ev.clientX - rect.left;
+  const my = ev.clientY - rect.top;
+  updateReadoutFromPhaseMouse(mx, my);
+  let hit = -1;
+  let bestD2 = 64;
+  for(let i=0;i<lastMarkerHits.length;i++){
+    const mk = lastMarkerHits[i];
+    const dx = mx - mk.x;
+    const dy = my - mk.y;
+    const d2 = dx*dx + dy*dy;
+    if(d2 <= bestD2){
+      bestD2 = d2;
+      hit = i;
+    }
+  }
+  if(hit !== hoverMarkerIndex){
+    hoverMarkerIndex = hit;
+    const toggles = getToggleState();
+    const fc = lastPlotData.exact ? lastPlotData.exact.fc : parseFloat(document.getElementById('fc').value);
+    const resMode = document.getElementById('resMode') ? document.getElementById('resMode').value : 'exact';
+    drawPlotFromData(lastPlotData, toggles, fc, resMode);
+  }
+});
+
+plotCanvasEl.addEventListener('mouseleave', ()=>{
+  if(hoverMarkerIndex !== -1){
+    hoverMarkerIndex = -1;
+    if(!lastPlotData) return;
+    const toggles = getToggleState();
+    const fc = lastPlotData.exact ? lastPlotData.exact.fc : parseFloat(document.getElementById('fc').value);
+    const resMode = document.getElementById('resMode') ? document.getElementById('resMode').value : 'exact';
+    drawPlotFromData(lastPlotData, toggles, fc, resMode);
+  }
+  setPlotReadout('Move over a trace to see frequency, phase, and magnitude.');
+});
+
+magCanvasEl.addEventListener('mousemove', (ev)=>{
+  if(!lastPlotData) return;
+  const rect = magCanvasEl.getBoundingClientRect();
+  const mx = ev.clientX - rect.left;
+  const my = ev.clientY - rect.top;
+  updateReadoutFromMagMouse(mx, my);
+});
+
+magCanvasEl.addEventListener('mouseleave', ()=>{
+  setPlotReadout('Move over a trace to see frequency, phase, and magnitude.');
+});
+</script>
+</body>
+</html>

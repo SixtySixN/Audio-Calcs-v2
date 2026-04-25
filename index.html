@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Tools</title>
+    <style>
+        body {
+            background-color: #2d2d2d;
+            color: rgb(170, 170, 170);
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .build-label {
+            position: fixed;
+            top: 10px;
+            right: 16px;
+            color: rgb(170, 170, 170);
+            font-size: 12px;
+            z-index: 1000;
+            pointer-events: none;
+            display: none;
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .tab-button {
+            background-color: #3d3d3d;
+            color: rgb(200, 200, 200);
+            border: 1px solid #555;
+            padding: 8px 14px;
+            cursor: pointer;
+        }
+
+        .tab-button.active {
+            background-color: #555;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .apf-frame {
+            display: block;
+            width: 100%;
+            height: 2400px;
+            border: none;
+            background-color: #1d1d1d;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .phase-delay-wrap {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .calc-box {
+            background-color: #1d1d1d;
+            border: 1px solid #555;
+            padding: 16px;
+            margin-bottom: 14px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .calc-box .form-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .calc-box label {
+            width: 170px;
+        }
+
+        .calc-box input {
+            width: 140px;
+        }
+
+        .phase-result {
+            margin-top: 12px;
+            padding: 10px;
+            border: 1px solid #555;
+            background-color: #2a2a2a;
+            color: rgb(200, 200, 200);
+        }
+
+        .main-result {
+            color: #6fdc6f;
+            font-weight: inherit;
+            font-size: inherit;
+        }
+
+        .main-result-line {
+            font-weight: 800;
+            font-size: 1.15rem;
+        }
+
+        .calc-title {
+            margin: 0 0 10px 0;
+            font-size: 1.05rem;
+            color: rgb(200, 200, 200);
+        }
+
+        label {
+            display: inline-block;
+            width: 120px;
+        }
+
+
+
+        input, select, .color {
+            background-color: #3d3d3d;
+            color: rgb(200, 200, 200);
+            border: 1px solid #555;
+            padding: 5px;  
+        }
+
+        select, .color{
+            width: 70px;
+        }
+
+        .point-row {
+            margin-bottom: 10px;
+        }
+
+        .scale {
+            margin-bottom: 10px;
+            width: 100px;
+            white-space: inherit;
+            border-collapse: separate;
+        }
+
+        button {
+            background-color: #444;
+            color: rgb(200, 200, 200);
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+
+        #plotArea {
+            margin-top: 20px;
+            background-color: #1d1d1d;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        #curvePlot {
+            display: block;
+            width: min(960px, 100%);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .custom-button {
+            display: inline-block;
+            background-color: #444;
+            font-family: Arial, sans-serif;
+            color: rgb(200, 200, 200);
+            border: none;
+            width: 90px;
+            padding: 8px 12px;
+            cursor: pointer;
+            text-align: center;
+            font-size: smaller;
+        }
+
+        .custom-button:hover {
+            background-color: #555;
+        }
+        .import-row {
+    display: flex;
+    gap: 8px; /* Adjust as needed */
+   margin-bottom: 10px;
+
+}
+input:focus, select:focus, textarea:focus {
+    outline: none;
+}
+
+    </style>
+</head>
+
+<body>
+    <div id="buildLabel" class="build-label"></div>
+    <div class="container">
+   
+
+        <div class="tab-nav">
+            <button class="tab-button active" data-tab="distanceElevationTab" onclick="switchTab('distanceElevationTab', this)">Distance/Elevation Calculator</button>
+            <button class="tab-button" data-tab="phaseDelayTab" onclick="switchTab('phaseDelayTab', this)">Delay Calculator</button>
+            <button class="tab-button" data-tab="apfCalcTab" onclick="switchTab('apfCalcTab', this)">APF Calculator</button>
+            <button class="tab-button" data-tab="targetCurveTab" onclick="switchTab('targetCurveTab', this)">TC Gen</button>
+        </div>
+
+        <div id="targetCurveTab" class="tab-panel">
+            <h2>Target Curve Generator</h2>
+
+            <div class="form-group">
+                <label>File Name:</label>
+                <input type="text" id="fileName" placeholder="target_curve">
+            </div>
+
+            <div class="form-group">
+                <label>Line Width:</label>
+                <select id="lineWidth">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Color:</label>
+                <input type="color" class="color" id="curveColor" value="#ff00ff">
+            </div>
+
+            <div class="form-group">
+                <label>Show Curve:</label>
+                <select id="showCurve">
+                    <option value="1">Show</option>
+                    <option value="0">Hide</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Curve Type:</label>
+                <select id="curveType">
+                    <option value="TF">TF</option>
+                    <option value="PH">PH</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Tolerance:</label>
+                <input type="number" id="tolerance" value="3" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <input type="file" id="fileInput" onchange="loadCurveFromFile(event)" style="display: none;">
+                <label for="fileInput" class="custom-button">Import</label>
+                <button onclick="previewCurve()">Refesh Curve</button>
+                <button onclick="saveCurve()" id="saveButton" style="display: none;">Export Curve</button>
+            </div>
+
+            <div id="plotArea">
+                <canvas id="curvePlot" width="960" height="480"></canvas>
+            </div>
+        </div>
+
+        <div id="apfCalcTab" class="tab-panel">
+            <h2>APF Calculator</h2>
+            <iframe id="apfFrame" class="apf-frame" src="APF Calc.html" title="APF Calculator"></iframe>
+        </div>
+
+        <div id="phaseDelayTab" class="tab-panel">
+            <h2>Delay Calculators</h2>
+            <div class="phase-delay-wrap">
+                <div class="calc-box">
+                    <h3 class="calc-title">Phase - Delay Calculator</h3>
+                    <div class="form-group">
+                        <label for="mainPhase">Main Phase (deg):</label>
+                        <input type="number" id="mainPhase" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="subPhase">Sub Phase (deg):</label>
+                        <input type="number" id="subPhase" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="alignmentFreq">Alignment Frequency (Hz):</label>
+                        <input type="number" id="alignmentFreq" step="0.01" value="80" min="0.01">
+                    </div>
+                    <button type="button" onclick="calculatePhaseDelay()">Calculate</button>
+
+                    <div class="phase-result">
+                        <div>Delta Phase: <span id="deltaPhaseResult">0.00</span> deg</div>
+                        <div class="main-result-line">Delay Time: <span id="delayMsResult" class="main-result">0.00</span> ms</div>
+                        <div>1/4 Wavelength Delay: <span id="quarterWaveDelayResult">0.00</span> ms</div>
+                        <div>1/2 Wavelength Delay: <span id="halfWaveDelayResult">0.00</span> ms</div>
+                    </div>
+                </div>
+
+                <div class="calc-box">
+                    <h3 class="calc-title">Path Offset Calculator</h3>
+                    <div class="form-group">
+                        <label for="distanceMain">Distance to Main (m):</label>
+                        <input type="number" id="distanceMain" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="distanceSub">Distance to Sub (m):</label>
+                        <input type="number" id="distanceSub" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="alignmentDelayMs">Alignment Delay (ms):</label>
+                        <input type="number" id="alignmentDelayMs" step="0.01" value="0" placeholder="Optional">
+                    </div>
+                    <button type="button" onclick="calculatePathOffsetDelay()">Calculate</button>
+
+                    <div class="phase-result">
+                        <div>Path Offset: <span id="pathOffsetResult">0.00</span> m</div>
+                        <div class="main-result-line">Delay Time: <span id="pathDelayMsResult" class="main-result">0.00</span> ms</div>
+                        <div>Path Offset 1/4 Wavelength: <span id="pathQuarterResult">0.00</span> m</div>
+                        <div>Path Offset 1/2 Wavelength: <span id="pathHalfResult">0.00</span> m</div>
+                    </div>
+                </div>
+
+                <div class="calc-box">
+                    <h3 class="calc-title">Distance/Wavelength Calculators</h3>
+
+                    <h4 class="calc-title">Frequency - Wavelength</h4>
+                    <div class="form-group">
+                        <label for="waveFreq">Frequency (Hz):</label>
+                        <input type="number" id="waveFreq" step="0.01" value="0" min="0.01">
+                    </div>
+                    <button type="button" onclick="calculateFrequencyWavelength()">Calculate</button>
+
+                    <div class="phase-result">
+                        <div class="main-result-line">Wavelength: <span id="wavelengthResultM" class="main-result">0.00</span> m / <span id="wavelengthResultMs" class="main-result">0.00</span> ms</div>
+                        <div>1/4 Wavelength: <span id="wavelengthQuarterResultM">0.00</span> m / <span id="wavelengthQuarterResultMs">0.00</span> ms</div>
+                        <div>1/2 Wavelength: <span id="wavelengthHalfResultM">0.00</span> m / <span id="wavelengthHalfResultMs">0.00</span> ms</div>
+                    </div>
+
+                    <h4 class="calc-title" style="margin-top:14px;">Distance - Time</h4>
+                    <div class="form-group">
+                        <label for="distanceToTime">Distance (m):</label>
+                        <input type="number" id="distanceToTime" step="0.01" value="0">
+                    </div>
+                    <button type="button" onclick="calculateDistanceTime()">Calculate</button>
+
+                    <div class="phase-result">
+                        <div class="main-result-line">Delay Time: <span id="distanceDelayResultMs" class="main-result">0.00</span> ms</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="distanceElevationTab" class="tab-panel active">
+            <h2>Distance/Elevation Calculator</h2>
+            <div class="phase-delay-wrap">
+                <div class="calc-box">
+                    <h3 class="calc-title">Distance - Elevation</h3>
+                    <div class="form-group">
+                        <label for="deMeasurementHeight">Measurement Height (m):</label>
+                        <input type="number" id="deMeasurementHeight" step="0.01" value="1.32" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="deMeasuredDistance">Measured Distance (m):</label>
+                        <input type="number" id="deMeasuredDistance" step="0.01" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="deMeasuredAngle">Measured Angle (deg):</label>
+                        <input type="number" id="deMeasuredAngle" step="0.01" value="0">
+                    </div>
+
+                    <h4 class="calc-title" style="margin-top:14px;">Add Offsets</h4>
+                    <div class="form-group">
+                        <label for="deStageHeight">Stage Height (m):</label>
+                        <input type="number" id="deStageHeight" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="deDepthOffset">Depth Offset (m):</label>
+                        <input type="number" id="deDepthOffset" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="deHeightOffset">Height Offset (m):</label>
+                        <input type="number" id="deHeightOffset" step="0.01" value="0">
+                    </div>
+
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" onclick="calculateDistanceElevation()">Calculate</button>
+                        <button type="button" onclick="clearDistanceElevationFields()">Clear</button>
+                        <button type="button" onclick="clearDistanceElevationOffsets()">Clear Offsets</button>
+                        
+                    </div>
+                    <div id="deCopyStatus" style="margin-top:8px; color: rgb(170, 170, 170);"></div>
+
+                    <div class="phase-result">
+                        <div class="main-result-line">x Distance: <span id="deHorizontalResult" class="main-result">0.00</span> m</div>
+                        <div class="main-result-line">z Height: <span id="deVerticalResult" class="main-result">0.00</span> m</div>
+                        <div id="deValidationMessage" style="margin-top:8px;color:#f09a9a;display:none;">Please enter valid values.</div>
+                        <div style="display:flex; gap:8px; margin-top:8px;">
+                            <button type="button" onclick="copyDistanceElevationResults()">Copy x/z</button>
+                            <button type="button" onclick="copyDistanceElevationX()">Copy X</button>
+                            <button type="button" onclick="copyDistanceElevationZ()">Copy Z</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 4px; padding: 2px 0;">
+                    
+                    <div class="form-group">
+                        <label for="defaultTabSelect">Default Tab:</label>
+                        <select id="defaultTabSelect" style="width:220px;">
+                            <option value="distanceElevationTab">Distance/Elevation Calculator</option>
+                            <option value="phaseDelayTab">Delay Calculator</option>
+                            <option value="apfCalcTab">APF Calculator</option>
+                            <option value="targetCurveTab">TC Gen</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="targetCurveExtras">
+            <div id="frequencyPoints">
+                <h3>Frequency Points</h3>
+                <div class="point-row">
+                    <input type="number"  placeholder="Frequency" class="freq">
+                    <input type="number" placeholder="Magnitude" class="mag">
+                    <select class="scale">
+                        <option value="log">Logarithmic</option>
+                        <option value="linear">Linear</option>
+                    </select>
+                    <button onclick="removePoint(this)">×</button>
+                </div>
+            </div>
+
+            <button onclick="addPoint(); previewCurve();" ;>+ Add Point</button>
+            <br>
+            <br>
+
+            <table class="scale">
+                <tr>
+                    <td>
+                        <label>X Min: <input type="number" class="scale" id="xMin" value="20"></label>
+                    </td>
+                    <td>
+                        <label>X Max: <input type="number" class="scale" id="xMax" value="20000"></label>
+                    </td>
+                    <td>
+                        <label>Y Min: <input type="number" class="scale" id="yMin" value="-18"></label>
+                    </td>
+                    <td>
+                        <label>Y Max: <input type="number" class="scale" id="yMax" value="18"></label>
+                    </td>
+                </tr>
+            </table>
+
+            <button onclick="updateScales()">Update Scales</button>
+            <button onclick="resetScales()">Reset to Default</button>
+        </div>
+    </div>
+
+
+
+    <script src="js/chart.js"></script>
+    <script src="js/curveGenerator.js"></script>
+    <script src="js/plotManager.js"></script>
+    <script>
+        function initBuildLabel() {
+            const buildLabelEl = document.getElementById('buildLabel');
+            if (!buildLabelEl) {
+                return;
+            }
+
+            const params = new URLSearchParams(window.location.search);
+            const buildLabel = params.get('buildLabel');
+            if (buildLabel) {
+                buildLabelEl.textContent = buildLabel;
+                buildLabelEl.style.display = 'block';
+            }
+        }
+
+        initBuildLabel();
+
+        function switchTab(tabId, clickedButton) {
+            const panels = document.querySelectorAll('.tab-panel');
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const buttonToActivate = clickedButton || document.querySelector('.tab-button[data-tab="' + tabId + '"]');
+            const isTargetTab = tabId === 'targetCurveTab';
+
+            if (!document.getElementById(tabId) || !buttonToActivate) {
+                return;
+            }
+
+            panels.forEach(panel => panel.classList.remove('active'));
+            tabButtons.forEach(button => button.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            buttonToActivate.classList.add('active');
+
+            const targetExtras = document.getElementById('targetCurveExtras');
+            if (targetExtras) {
+                targetExtras.style.display = isTargetTab ? '' : 'none';
+            }
+
+        }
+
+        function calculatePhaseDelay() {
+            const mainPhase = Number(document.getElementById('mainPhase').value);
+            const subPhase = Number(document.getElementById('subPhase').value);
+            const alignmentFreq = Number(document.getElementById('alignmentFreq').value);
+
+            const deltaPhase = mainPhase - subPhase;
+            const rawDelayMs = alignmentFreq > 0 ? -((deltaPhase / 360) * (1000 / alignmentFreq)) : 0;
+            const delayMs = Math.abs(rawDelayMs);
+            const quarterWaveDelayMs = delayMs / 4;
+            const halfWaveDelayMs = delayMs / 2;
+
+            document.getElementById('deltaPhaseResult').textContent = deltaPhase.toFixed(2);
+            document.getElementById('delayMsResult').textContent = delayMs.toFixed(2);
+            document.getElementById('quarterWaveDelayResult').textContent = quarterWaveDelayMs.toFixed(2);
+            document.getElementById('halfWaveDelayResult').textContent = halfWaveDelayMs.toFixed(2);
+        }
+
+        function calculatePathOffsetDelay() {
+            const distanceMain = Number(document.getElementById('distanceMain').value);
+            const distanceSub = Number(document.getElementById('distanceSub').value);
+            const alignmentDelayMs = Number(document.getElementById('alignmentDelayMs').value) || 0;
+
+            const pathOffset = distanceMain - distanceSub;
+            const pathDelayMs = (pathOffset / 343) * 1000;
+            const delayMs = pathDelayMs + alignmentDelayMs;
+            const quarterOffset = pathOffset / 4;
+            const halfOffset = pathOffset / 2;
+
+            document.getElementById('pathOffsetResult').textContent = pathOffset.toFixed(2);
+            document.getElementById('pathDelayMsResult').textContent = delayMs.toFixed(2);
+            document.getElementById('pathQuarterResult').textContent = quarterOffset.toFixed(2);
+            document.getElementById('pathHalfResult').textContent = halfOffset.toFixed(2);
+        }
+
+        function calculateFrequencyWavelength() {
+            const speedOfSound = 343;
+            const frequency = Number(document.getElementById('waveFreq').value);
+
+            const wavelengthM = frequency > 0 ? (speedOfSound / frequency) : 0;
+            const wavelengthMs = frequency > 0 ? (1000 / frequency) : 0;
+            const quarterM = wavelengthM / 4;
+            const halfM = wavelengthM / 2;
+            const quarterMs = wavelengthMs / 4;
+            const halfMs = wavelengthMs / 2;
+
+            document.getElementById('wavelengthResultM').textContent = wavelengthM.toFixed(2);
+            document.getElementById('wavelengthResultMs').textContent = wavelengthMs.toFixed(2);
+            document.getElementById('wavelengthQuarterResultM').textContent = quarterM.toFixed(2);
+            document.getElementById('wavelengthQuarterResultMs').textContent = quarterMs.toFixed(2);
+            document.getElementById('wavelengthHalfResultM').textContent = halfM.toFixed(2);
+            document.getElementById('wavelengthHalfResultMs').textContent = halfMs.toFixed(2);
+        }
+
+        function calculateDistanceTime() {
+            const speedOfSound = 343;
+            const distance = Number(document.getElementById('distanceToTime').value);
+            const delayMs = (distance / speedOfSound) * 1000;
+            document.getElementById('distanceDelayResultMs').textContent = delayMs.toFixed(2);
+        }
+
+        const DE_MEASUREMENT_HEIGHT_STORAGE_KEY = 'distanceElevationMeasurementHeight';
+        const DEFAULT_TAB_STORAGE_KEY = 'defaultTabId';
+
+        function loadDistanceElevationMeasurementHeight() {
+            const measurementHeightEl = document.getElementById('deMeasurementHeight');
+            if (!measurementHeightEl) {
+                return;
+            }
+
+            try {
+                const savedValue = localStorage.getItem(DE_MEASUREMENT_HEIGHT_STORAGE_KEY);
+                if (savedValue === null) {
+                    return;
+                }
+
+                const parsed = Number(savedValue);
+                if (Number.isFinite(parsed) && parsed >= 0) {
+                    measurementHeightEl.value = parsed;
+                }
+            } catch {
+                // Ignore storage failures and keep default value.
+            }
+        }
+
+        function saveDistanceElevationMeasurementHeight() {
+            const measurementHeightEl = document.getElementById('deMeasurementHeight');
+            if (!measurementHeightEl) {
+                return;
+            }
+
+            const measurementHeight = Number(measurementHeightEl.value);
+            if (!Number.isFinite(measurementHeight) || measurementHeight < 0) {
+                return;
+            }
+
+            try {
+                localStorage.setItem(DE_MEASUREMENT_HEIGHT_STORAGE_KEY, String(measurementHeight));
+            } catch {
+                // Ignore storage failures if persistence is unavailable.
+            }
+        }
+
+        function loadDefaultTabPreference() {
+            const defaultTabSelectEl = document.getElementById('defaultTabSelect');
+            if (!defaultTabSelectEl) {
+                return;
+            }
+
+            let tabId = 'distanceElevationTab';
+            try {
+                const savedTabId = localStorage.getItem(DEFAULT_TAB_STORAGE_KEY);
+                if (savedTabId && document.getElementById(savedTabId)) {
+                    tabId = savedTabId;
+                }
+            } catch {
+                // Ignore storage failures and keep default value.
+            }
+
+            defaultTabSelectEl.value = tabId;
+            switchTab(tabId);
+        }
+
+        function saveDefaultTabPreference() {
+            const defaultTabSelectEl = document.getElementById('defaultTabSelect');
+            if (!defaultTabSelectEl) {
+                return;
+            }
+
+            const selectedTabId = defaultTabSelectEl.value;
+            if (!document.getElementById(selectedTabId)) {
+                return;
+            }
+
+            try {
+                localStorage.setItem(DEFAULT_TAB_STORAGE_KEY, selectedTabId);
+            } catch {
+                // Ignore storage failures if persistence is unavailable.
+            }
+        }
+
+        function calculateDistanceElevation() {
+            const measuredDistance = Number(document.getElementById('deMeasuredDistance').value);
+            const measuredAngle = Number(document.getElementById('deMeasuredAngle').value);
+            const measurementHeight = Number(document.getElementById('deMeasurementHeight').value);
+            const stageHeight = Number(document.getElementById('deStageHeight').value);
+            const depthOffset = Number(document.getElementById('deDepthOffset').value);
+            const heightOffset = Number(document.getElementById('deHeightOffset').value);
+
+            const validationEl = document.getElementById('deValidationMessage');
+            const isValid = measuredDistance >= 0 && measurementHeight >= 0 && measuredAngle > -90 && measuredAngle < 90;
+
+            if (!isValid) {
+                validationEl.style.display = 'block';
+                return;
+            }
+
+            validationEl.style.display = 'none';
+
+            const angleInRadians = measuredAngle * Math.PI / 180;
+            const horizontalDistance = (Math.cos(angleInRadians) * measuredDistance) + depthOffset;
+            const verticalHeight = (Math.sin(angleInRadians) * measuredDistance) + measurementHeight + stageHeight - heightOffset;
+
+            document.getElementById('deHorizontalResult').textContent = horizontalDistance.toFixed(2);
+            document.getElementById('deVerticalResult').textContent = verticalHeight.toFixed(2);
+        }
+
+        function clearDistanceElevationFields() {
+            document.getElementById('deMeasuredDistance').value = '';
+            document.getElementById('deMeasuredAngle').value = 0;
+            document.getElementById('deValidationMessage').style.display = 'none';
+            calculateDistanceElevation();
+            document.getElementById('deMeasuredDistance').focus();
+        }
+
+        function clearDistanceElevationOffsets() {
+            document.getElementById('deStageHeight').value = 0;
+            document.getElementById('deDepthOffset').value = 0;
+            document.getElementById('deHeightOffset').value = 0;
+            document.getElementById('deValidationMessage').style.display = 'none';
+            calculateDistanceElevation();
+        }
+
+        async function copyDistanceElevationResults() {
+            const xRaw = Number(document.getElementById('deHorizontalResult').textContent.trim());
+            const zRaw = Number(document.getElementById('deVerticalResult').textContent.trim());
+            const xValue = Number.isFinite(xRaw) ? xRaw.toFixed(2) : '0.00';
+            const zValue = Number.isFinite(zRaw) ? zRaw.toFixed(2) : '0.00';
+            const copyText = xValue + '\t' + zValue;
+            const copyHtml = '<table><tbody><tr><td>' + xValue + '</td><td>' + zValue + '</td></tr></tbody></table>';
+            const statusEl = document.getElementById('deCopyStatus');
+
+            try {
+                await writeDistanceElevationToClipboard(copyText, copyHtml);
+
+                if (statusEl) {
+                    statusEl.textContent = 'Copied: x and z (2 decimals) in multi-field format';
+                }
+            } catch {
+                if (statusEl) {
+                    statusEl.textContent = 'Copy failed. Please copy results manually.';
+                }
+            }
+        }
+
+        async function copyDistanceElevationX() {
+            const xRaw = Number(document.getElementById('deHorizontalResult').textContent.trim());
+            const xValue = Number.isFinite(xRaw) ? xRaw.toFixed(2) : '0.00';
+            const statusEl = document.getElementById('deCopyStatus');
+
+            try {
+                await writeDistanceElevationToClipboard(xValue);
+                if (statusEl) {
+                    statusEl.textContent = 'Copied X: ' + xValue;
+                }
+            } catch {
+                if (statusEl) {
+                    statusEl.textContent = 'Copy X failed. Please copy manually.';
+                }
+            }
+        }
+
+        async function copyDistanceElevationZ() {
+            const zRaw = Number(document.getElementById('deVerticalResult').textContent.trim());
+            const zValue = Number.isFinite(zRaw) ? zRaw.toFixed(2) : '0.00';
+            const statusEl = document.getElementById('deCopyStatus');
+
+            try {
+                await writeDistanceElevationToClipboard(zValue);
+                if (statusEl) {
+                    statusEl.textContent = 'Copied Z: ' + zValue;
+                }
+            } catch {
+                if (statusEl) {
+                    statusEl.textContent = 'Copy Z failed. Please copy manually.';
+                }
+            }
+        }
+
+        async function writeDistanceElevationToClipboard(textValue, htmlValue) {
+            if (typeof require === 'function') {
+                const electron = require('electron');
+                if (electron && electron.clipboard) {
+                    if (htmlValue) {
+                        electron.clipboard.write({ text: textValue, html: htmlValue });
+                    } else {
+                        electron.clipboard.writeText(textValue);
+                    }
+                    return;
+                }
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(textValue);
+                return;
+            }
+
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textValue;
+            tempTextArea.style.position = 'fixed';
+            tempTextArea.style.left = '-9999px';
+            document.body.appendChild(tempTextArea);
+            tempTextArea.focus();
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDistanceElevationMeasurementHeight();
+            loadDefaultTabPreference();
+
+            const phaseIds = ['mainPhase', 'subPhase', 'alignmentFreq'];
+            phaseIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', calculatePhaseDelay);
+                }
+            });
+
+            const pathIds = ['distanceMain', 'distanceSub', 'alignmentDelayMs'];
+            pathIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', calculatePathOffsetDelay);
+                }
+            });
+
+            const waveIds = ['waveFreq'];
+            waveIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', calculateFrequencyWavelength);
+                }
+            });
+
+            const distanceTimeIds = ['distanceToTime'];
+            distanceTimeIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', calculateDistanceTime);
+                }
+            });
+
+            const distanceElevationIds = [
+                'deMeasurementHeight',
+                'deMeasuredDistance',
+                'deMeasuredAngle',
+                'deStageHeight',
+                'deDepthOffset',
+                'deHeightOffset'
+            ];
+            distanceElevationIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', calculateDistanceElevation);
+                }
+            });
+
+            const measurementHeightEl = document.getElementById('deMeasurementHeight');
+            if (measurementHeightEl) {
+                measurementHeightEl.addEventListener('input', saveDistanceElevationMeasurementHeight);
+                measurementHeightEl.addEventListener('change', saveDistanceElevationMeasurementHeight);
+            }
+
+            const defaultTabSelectEl = document.getElementById('defaultTabSelect');
+            if (defaultTabSelectEl) {
+                defaultTabSelectEl.addEventListener('change', () => {
+                    saveDefaultTabPreference();
+                    switchTab(defaultTabSelectEl.value);
+                });
+            }
+
+            calculatePhaseDelay();
+            calculatePathOffsetDelay();
+            calculateFrequencyWavelength();
+            calculateDistanceTime();
+            calculateDistanceElevation();
+        });
+
+        function updateFileName() {
+            const fileInput = document.getElementById("fileInput");
+            const fileNameDisplay = document.getElementById("fileNameDisplay");
+            fileNameDisplay.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : "";
+        }
+    </script>
+
+</body>
+
+</html>
