@@ -354,6 +354,17 @@ input:focus, select:focus, textarea:focus {
                     <div class="phase-result">
                         <div class="main-result-line">Delay Time: <span id="distanceDelayResultMs" class="main-result">0.00</span> ms</div>
                     </div>
+
+                    <h4 class="calc-title" style="margin-top:14px;">Time - Distance</h4>
+                    <div class="form-group">
+                        <label for="timeToDistance">Delay Time (ms):</label>
+                        <input type="number" id="timeToDistance" step="0.01" value="0">
+                    </div>
+                    <button type="button" onclick="calculateTimeDistance()">Calculate</button>
+
+                    <div class="phase-result">
+                        <div class="main-result-line">Distance: <span id="timeDistanceResultM" class="main-result">0.00</span> m</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -568,6 +579,13 @@ input:focus, select:focus, textarea:focus {
             const distance = Number(document.getElementById('distanceToTime').value);
             const delayMs = (distance / speedOfSound) * 1000;
             document.getElementById('distanceDelayResultMs').textContent = delayMs.toFixed(2);
+        }
+
+        function calculateTimeDistance() {
+            const speedOfSound = 343;
+            const timeMs = Number(document.getElementById('timeToDistance').value);
+            const distance = (timeMs / 1000) * speedOfSound;
+            document.getElementById('timeDistanceResultM').textContent = distance.toFixed(2);
         }
 
         const DE_MEASUREMENT_HEIGHT_STORAGE_KEY = 'distanceElevationMeasurementHeight';
@@ -813,6 +831,14 @@ input:focus, select:focus, textarea:focus {
                 }
             });
 
+            const timeDistanceIds = ['timeToDistance'];
+            timeDistanceIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', calculateTimeDistance);
+                }
+            });
+
             const distanceElevationIds = [
                 'deMeasurementHeight',
                 'deMeasuredDistance',
@@ -846,6 +872,7 @@ input:focus, select:focus, textarea:focus {
             calculatePathOffsetDelay();
             calculateFrequencyWavelength();
             calculateDistanceTime();
+            calculateTimeDistance();
             calculateDistanceElevation();
         });
 
