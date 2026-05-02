@@ -192,6 +192,79 @@
         .custom-button:hover {
             background-color: #555;
         }
+
+        .de-log-container {
+            margin-top: 14px;
+            border: 1px solid #555;
+            background-color: #1d1d1d;
+            padding: 12px;
+        }
+
+        .de-log-container h4 {
+            margin: 0 0 10px 0;
+            color: rgb(200, 200, 200);
+        }
+
+        .de-log-meta-row {
+            display: grid;
+            grid-template-columns: 130px 1fr 110px 1fr;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .de-log-meta-row.single {
+            grid-template-columns: 130px 1fr;
+        }
+
+        .de-log-meta-row label {
+            width: auto;
+        }
+
+        .de-log-meta-row input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .de-log-date {
+            color: rgb(200, 200, 200);
+            font-size: 0.95rem;
+        }
+
+        .de-log-table-wrap {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .de-log-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: rgb(200, 200, 200);
+        }
+
+        .de-log-table th,
+        .de-log-table td {
+            border: 1px solid #555;
+            padding: 6px 8px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .de-log-actions {
+            margin-top: 10px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .de-log-delete {
+            background-color: #6a3434;
+            padding: 6px 10px;
+        }
+
+        .de-log-delete:hover {
+            background-color: #804040;
+        }
+
         .import-row {
     display: flex;
     gap: 8px; /* Adjust as needed */
@@ -402,10 +475,14 @@ input:focus, select:focus, textarea:focus {
                     </div>
 
                     <div style="display:flex; gap:8px;">
-                        <button type="button" onclick="calculateDistanceElevation()">Calculate</button>
+                        <button type="button" onclick="calculateDistanceElevation(true)">Calculate</button>
                         <button type="button" onclick="clearDistanceElevationFields()">Clear</button>
                         <button type="button" onclick="clearDistanceElevationOffsets()">Clear Offsets</button>
                         
+                    </div>
+                    <div class="form-group" style="margin-top:10px; margin-bottom:6px;">
+                        <label for="deEnableLog">Log:</label>
+                        <input type="checkbox" id="deEnableLog" style="width:auto;">
                     </div>
                     <div id="deCopyStatus" style="margin-top:8px; color: rgb(170, 170, 170);"></div>
 
@@ -431,6 +508,46 @@ input:focus, select:focus, textarea:focus {
                             <option value="apfCalcTab">APF Calculator</option>
                             <option value="targetCurveTab">TC Gen</option>
                         </select>
+                    </div>
+                </div>
+
+                <div id="deLogContainer" class="de-log-container" style="display:none;">
+                    <h4 class="calc-title">Measurement Log</h4>
+                    <div class="de-log-meta-row">
+                        <label>Date:</label>
+                        <div id="deLogDate" class="de-log-date"></div>
+                        <label for="deLogVenue">Venue:</label>
+                        <input type="text" id="deLogVenue" placeholder="Venue name">
+                    </div>
+                    <div class="de-log-meta-row">
+                        <label for="deLogDatum">Datum:</label>
+                        <input type="text" id="deLogDatum" placeholder="Datum">
+                        <label></label>
+                        <div></div>
+                    </div>
+                    <div class="de-log-meta-row single">
+                        <label for="deLogNotes">Notes:</label>
+                        <input type="text" id="deLogNotes" placeholder="Notes">
+                    </div>
+
+                    <div class="de-log-table-wrap">
+                        <table id="deLogTable" class="de-log-table">
+                            <thead>
+                                <tr>
+                                    <th>Point #</th>
+                                    <th>Measured Distance (m)</th>
+                                    <th>Measured Angle (deg)</th>
+                                    <th>Horizontal Distance (m)</th>
+                                    <th>Vertical Height (m)</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deLogTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="de-log-actions">
+                        <button type="button" onclick="exportDistanceElevationLogToExcel()">Export to Excel</button>
                     </div>
                 </div>
             </div>
@@ -668,7 +785,7 @@ input:focus, select:focus, textarea:focus {
             }
         }
 
-        function calculateDistanceElevation() {
+        function calculateDistanceElevation(logMeasurement = false) {
             const measuredDistance = Number(document.getElementById('deMeasuredDistance').value);
             const measuredAngle = Number(document.getElementById('deMeasuredAngle').value);
             const measurementHeight = Number(document.getElementById('deMeasurementHeight').value);
@@ -692,6 +809,168 @@ input:focus, select:focus, textarea:focus {
 
             document.getElementById('deHorizontalResult').textContent = horizontalDistance.toFixed(2);
             document.getElementById('deVerticalResult').textContent = verticalHeight.toFixed(2);
+
+            if (logMeasurement) {
+                appendDistanceElevationLogRow({
+                    measuredDistance,
+                    measuredAngle,
+                    horizontalDistance,
+                    verticalHeight
+                });
+            }
+        }
+
+        function updateDistanceElevationLogDate() {
+            const dateEl = document.getElementById('deLogDate');
+            if (!dateEl) {
+                return;
+            }
+
+            const now = new Date();
+            dateEl.textContent = now.toLocaleDateString();
+        }
+
+        function toggleDistanceElevationLog() {
+            const enabledEl = document.getElementById('deEnableLog');
+            const containerEl = document.getElementById('deLogContainer');
+            if (!enabledEl || !containerEl) {
+                return;
+            }
+
+            containerEl.style.display = enabledEl.checked ? 'block' : 'none';
+            if (enabledEl.checked) {
+                updateDistanceElevationLogDate();
+            }
+        }
+
+        function appendDistanceElevationLogRow(values) {
+            const enabledEl = document.getElementById('deEnableLog');
+            const bodyEl = document.getElementById('deLogTableBody');
+            if (!enabledEl || !enabledEl.checked || !bodyEl) {
+                return;
+            }
+
+            const pointNumber = getNextDistanceElevationLogPointNumber();
+            const row = document.createElement('tr');
+            row.setAttribute('data-point', String(pointNumber));
+
+            row.innerHTML =
+                '<td>' + pointNumber + '</td>' +
+                '<td>' + values.measuredDistance.toFixed(2) + '</td>' +
+                '<td>' + values.measuredAngle.toFixed(2) + '</td>' +
+                '<td>' + values.horizontalDistance.toFixed(2) + '</td>' +
+                '<td>' + values.verticalHeight.toFixed(2) + '</td>' +
+                '<td><button type="button" class="de-log-delete">Delete</button></td>';
+
+            const deleteButton = row.querySelector('button');
+            if (deleteButton) {
+                deleteButton.addEventListener('click', () => {
+                    row.remove();
+                });
+            }
+
+            bodyEl.appendChild(row);
+        }
+
+        function getNextDistanceElevationLogPointNumber() {
+            const bodyEl = document.getElementById('deLogTableBody');
+            if (!bodyEl) {
+                return 1;
+            }
+
+            const usedPoints = new Set();
+            const rows = bodyEl.querySelectorAll('tr[data-point]');
+            rows.forEach(row => {
+                const pointValue = Number(row.getAttribute('data-point'));
+                if (Number.isInteger(pointValue) && pointValue > 0) {
+                    usedPoints.add(pointValue);
+                }
+            });
+
+            let candidate = 1;
+            while (usedPoints.has(candidate)) {
+                candidate += 1;
+            }
+            return candidate;
+        }
+
+        function exportDistanceElevationLogToExcel() {
+            const enabledEl = document.getElementById('deEnableLog');
+            const tableEl = document.getElementById('deLogTable');
+            const dateEl = document.getElementById('deLogDate');
+            const venueEl = document.getElementById('deLogVenue');
+            const datumEl = document.getElementById('deLogDatum');
+            const notesEl = document.getElementById('deLogNotes');
+            const bodyEl = document.getElementById('deLogTableBody');
+
+            if (!enabledEl || !enabledEl.checked || !tableEl || !bodyEl || bodyEl.children.length === 0) {
+                return;
+            }
+
+            const dateText = dateEl ? dateEl.textContent : '';
+            const venueText = venueEl ? venueEl.value : '';
+            const datumText = datumEl ? datumEl.value : '';
+            const notesText = notesEl ? notesEl.value : '';
+
+            const clonedTable = tableEl.cloneNode(true);
+            const rows = clonedTable.querySelectorAll('tr');
+            rows.forEach(row => {
+                if (row.lastElementChild) {
+                    row.removeChild(row.lastElementChild);
+                }
+            });
+
+            const html =
+                '<html><head><meta charset="utf-8"></head><body>' +
+                '<table border="1" style="border-collapse:collapse;">' +
+                '<tr><td><b>Date</b></td><td>' + escapeHtml(dateText) + '</td><td><b>Venue</b></td><td>' + escapeHtml(venueText) + '</td></tr>' +
+                '<tr><td><b>Datum</b></td><td colspan="3">' + escapeHtml(datumText) + '</td></tr>' +
+                '<tr><td><b>Notes</b></td><td colspan="3">' + escapeHtml(notesText) + '</td></tr>' +
+                '</table><br>' +
+                clonedTable.outerHTML +
+                '</body></html>';
+
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = buildDistanceElevationExportFileName(venueText, dateText, '.xls');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function buildDistanceElevationExportFileName(venueText, dateText, extension = '.csv') {
+            const venuePart = sanitizeFileNamePart(venueText) || 'venue';
+            const datePart = sanitizeFileNamePart(dateText) || formatFileDate(new Date());
+            return venuePart + '_' + datePart + extension;
+        }
+
+        function sanitizeFileNamePart(text) {
+            return String(text || '')
+                .trim()
+                .replace(/\s+/g, '_')
+                .replace(/[\\/:*?"<>|]/g, '')
+                .replace(/_+/g, '_')
+                .replace(/^_+|_+$/g, '')
+                .slice(0, 80);
+        }
+
+        function formatFileDate(dateValue) {
+            const year = String(dateValue.getFullYear());
+            const month = String(dateValue.getMonth() + 1).padStart(2, '0');
+            const day = String(dateValue.getDate()).padStart(2, '0');
+            return year + '-' + month + '-' + day;
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         }
 
         function clearDistanceElevationFields() {
@@ -850,9 +1129,14 @@ input:focus, select:focus, textarea:focus {
             distanceElevationIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
-                    el.addEventListener('input', calculateDistanceElevation);
+                    el.addEventListener('input', () => calculateDistanceElevation());
                 }
             });
+
+            const deLogEnabledEl = document.getElementById('deEnableLog');
+            if (deLogEnabledEl) {
+                deLogEnabledEl.addEventListener('change', toggleDistanceElevationLog);
+            }
 
             const measurementHeightEl = document.getElementById('deMeasurementHeight');
             if (measurementHeightEl) {
@@ -874,6 +1158,7 @@ input:focus, select:focus, textarea:focus {
             calculateDistanceTime();
             calculateTimeDistance();
             calculateDistanceElevation();
+            toggleDistanceElevationLog();
         });
 
         function updateFileName() {
