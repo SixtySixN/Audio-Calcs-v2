@@ -2740,10 +2740,10 @@ if(runBtn) runBtn.onclick = ()=> {
     // build toggles dynamically and legend based on which traces exist
     const traces = [
       {id:'showAP', label:'AP phase', color:'#b3b3b3', present:true},
-      {id:'showMain', label:'Main original', color:'#58eb34', present:true},
-      {id:'showSub', label:'Sub original', color:'#eb8334', present:true},
-      {id:'showMainPost', label:'Main post‑APF', color:'#2a82c9', present: applyMain},
-      {id:'showSubPost', label:'Sub post‑APF', color:'#eb34d8', present: applySub},
+      {id:'showMain', label:'Main', color:'#58eb34', present:true},
+      {id:'showSub', label:'Sub', color:'#eb8334', present:true},
+      {id:'showMainPost', label:'Main Post', color:'#2a82c9', present: applyMain},
+      {id:'showSubPost', label:'Sub Post', color:'#eb34d8', present: applySub},
       {id:'showCombined', label:'Estimated sum trace', color:'#34d5eb', present: true}
     ];
     buildTraceToggles(traces, {
